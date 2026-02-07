@@ -1,0 +1,50 @@
+{
+  "name": "verno",
+  "displayName": "verno",
+  "description": "a voice agentic coding agent",
+  "version": "0.0.1",
+  "publisher": "yourname",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "main": "./out/extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "commands": [
+      {
+        "command": "verno.processInput",
+        "title": "Verno: Process User Input"
+      },
+      {
+        "command": "verno.startRecording",
+        "title": "Verno: Start Recording"
+      },
+      {
+        "command": "verno.stopRecording",
+        "title": "Verno: Stop Recording"
+      },
+      {
+        "command": "verno.manageAgents",
+        "title": "Verno: Manage Agents"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.80.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "typescript-eslint": "^8.54.0",
+    "eslint": "^9.39.2",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2"
+  }
+}
