@@ -5,38 +5,58 @@
 import * as vscode from 'vscode';
 
 export class AgentPanel {
-  private panel: vscode.WebviewPanel | null = null;
-  private context: vscode.ExtensionContext;
+  private webviewView: vscode.WebviewView | null = null;
 
-  constructor(context: vscode.ExtensionContext) {
-    this.context = context;
+  constructor(private context: vscode.ExtensionContext) {}
+
+  /**
+   * Set the webview view from the sidebar provider
+   */
+  setWebviewView(webviewView: vscode.WebviewView): void {
+    this.webviewView = webviewView;
   }
 
-  show(): void {
-    if (this.panel) {
-      this.panel.reveal();
-      return;
+  /**
+   * Send a message to the sidebar webview
+   */
+  postMessage(message: any): void {
+    if (this.webviewView) {
+      this.webviewView.webview.postMessage(message);
     }
-
-    this.panel = vscode.window.createWebviewPanel(
-      'agentPanel',
-      'Agent Status',
-      vscode.ViewColumn.Two,
-      {
-        enableScripts: true,
-        localResourceRoots: [vscode.Uri.joinPath(this.context.extensionUri, 'ui', 'webviews')]
-      }
-    );
-
-    // TODO: Set webview HTML content
-    this.panel.onDidDispose(() => {
-      this.panel = null;
-    });
   }
 
+  /**
+   * Notify that recording has started
+   */
+  notifyRecordingStarted(): void {
+    this.postMessage({ type: 'recordingStarted' });
+  }
+
+  /**
+   * Notify that recording has stopped
+   */
+  notifyRecordingStopped(): void {
+    this.postMessage({ type: 'recordingStopped' });
+  }
+
+  /**
+   * Notify that processing has started
+   */
+  notifyProcessingStarted(): void {
+    this.postMessage({ type: 'processingStarted' });
+  }
+
+  /**
+   * Notify that processing is complete
+   */
+  notifyProcessingComplete(): void {
+    this.postMessage({ type: 'processingComplete' });
+  }
+
+  /**
+   * Update agent status (legacy method for compatibility)
+   */
   updateStatus(agentName: string, status: string): void {
-    if (this.panel) {
-      // TODO: Update webview content
-    }
+    // Status updates are handled through notification methods
   }
 }

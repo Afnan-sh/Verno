@@ -3,7 +3,7 @@
  */
 
 export const DEFAULT_CONFIG = {
-  llmProvider: 'openai',
+  llmProvider: 'gemini',
   recordingFormat: 'wav',
   autoSaveRecordings: true,
   recordingQuality: 'high',
