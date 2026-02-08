@@ -35,39 +35,27 @@ class OrchestratorAgent extends BaseAgent_1.BaseAgent {
         if (!this.validateContext(context)) {
             throw new Error('Invalid context provided to OrchestratorAgent');
         }
-        this.log('Starting orchestrator workflow');
+        this.log('Starting orchestrator workflow division');
         try {
             const userRequest = context.metadata?.userRequest;
             if (!userRequest) {
                 throw new Error('No user request found in context');
             }
             this.log(`Processing request: ${userRequest}`);
-            // Step 1: Analyze request with LLM
-            const analysisPrompt = `Analyze this request and determine what files and code need to be generated. Return a JSON object with the structure needed.\n\nRequest: ${userRequest}`;
-            const analysis = await this.llmService.generateText(analysisPrompt);
-            this.log(`Analysis complete: ${analysis}`);
-            // Step 2: Generate code files
-            const codeGenerator = this.agentRegistry.get('codeGenerator');
-            if (codeGenerator) {
-                const codeContext = { ...context, metadata: { ...context.metadata, specification: analysis } };
-                await codeGenerator.execute(codeContext);
-                this.log('Code generation complete');
-            }
-            // Step 3: Generate documentation
-            const docAgent = this.agentRegistry.get('documentationAgent');
-            if (docAgent) {
-                const docContext = { ...context, metadata: { ...context.metadata, codeAnalysis: analysis } };
-                await docAgent.execute(docContext);
-                this.log('Documentation generation complete');
-            }
-            // Step 4: Generate tests
-            const testAgent = this.agentRegistry.get('testGenerator');
-            if (testAgent) {
-                const testContext = { ...context, metadata: { ...context.metadata, codeAnalysis: analysis } };
-                await testAgent.execute(testContext);
-                this.log('Test generation complete');
-            }
-            return `Workflow completed successfully for request: ${userRequest}`;
+            // Generate workflow plan by analyzing the request
+            const planPrompt = `You are a software architect. Analyze this user request and create a detailed step-by-step workflow plan. Return ONLY a JSON array with this exact structure:
+[
+  { "step": 1, "name": "Analyze Requirements", "description": "Break down the user request" },
+  { "step": 2, "name": "Generate Code", "description": "Create the implementation" },
+  { "step": 3, "name": "Generate Documentation", "description": "Create API docs and guides" },
+  { "step": 4, "name": "Generate Tests", "description": "Create unit and integration tests" }
+]
+
+User Request: ${userRequest}`;
+            const workflowPlan = await this.llmService.generateText(planPrompt);
+            this.log(`Workflow plan generated: ${workflowPlan}`);
+            // Return the workflow plan as a JSON string
+            return workflowPlan;
         }
         catch (error) {
             const errorMsg = error instanceof Error ? error.message : String(error);

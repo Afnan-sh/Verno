@@ -2,66 +2,57 @@
 /**
  * VS Code sidebar panel for agent status
  */
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AgentPanel = void 0;
-const vscode = __importStar(require("vscode"));
 class AgentPanel {
-    panel = null;
     context;
+    webviewView = null;
     constructor(context) {
         this.context = context;
     }
-    show() {
-        if (this.panel) {
-            this.panel.reveal();
-            return;
-        }
-        this.panel = vscode.window.createWebviewPanel('agentPanel', 'Agent Status', vscode.ViewColumn.Two, {
-            enableScripts: true,
-            localResourceRoots: [vscode.Uri.joinPath(this.context.extensionUri, 'ui', 'webviews')]
-        });
-        // TODO: Set webview HTML content
-        this.panel.onDidDispose(() => {
-            this.panel = null;
-        });
+    /**
+     * Set the webview view from the sidebar provider
+     */
+    setWebviewView(webviewView) {
+        this.webviewView = webviewView;
     }
-    updateStatus(agentName, status) {
-        if (this.panel) {
-            // TODO: Update webview content
+    /**
+     * Send a message to the sidebar webview
+     */
+    postMessage(message) {
+        if (this.webviewView) {
+            this.webviewView.webview.postMessage(message);
         }
+    }
+    /**
+     * Notify that recording has started
+     */
+    notifyRecordingStarted() {
+        this.postMessage({ type: 'recordingStarted' });
+    }
+    /**
+     * Notify that recording has stopped
+     */
+    notifyRecordingStopped() {
+        this.postMessage({ type: 'recordingStopped' });
+    }
+    /**
+     * Notify that processing has started
+     */
+    notifyProcessingStarted() {
+        this.postMessage({ type: 'processingStarted' });
+    }
+    /**
+     * Notify that processing is complete
+     */
+    notifyProcessingComplete() {
+        this.postMessage({ type: 'processingComplete' });
+    }
+    /**
+     * Update agent status (legacy method for compatibility)
+     */
+    updateStatus(agentName, status) {
+        // Status updates are handled through notification methods
     }
 }
 exports.AgentPanel = AgentPanel;

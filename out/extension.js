@@ -47,6 +47,7 @@ const StopRecordingCommand_1 = require("./commands/StopRecordingCommand");
 const ManageAgentsCommand_1 = require("./commands/ManageAgentsCommand");
 const RecordingStatus_1 = require("./ui/statusBar/RecordingStatus");
 const AgentPanel_1 = require("./ui/panels/AgentPanel");
+const SidebarProvider_1 = require("./ui/panels/SidebarProvider");
 let logger;
 let configService;
 let llmService;
@@ -54,6 +55,7 @@ let agentRegistry;
 let fileService;
 let recordingStatus;
 let agentPanel;
+let sidebarProvider;
 async function activate(context) {
     try {
         // Initialize services
@@ -65,40 +67,27 @@ async function activate(context) {
         recordingStatus = new RecordingStatus_1.RecordingStatus();
         agentPanel = new AgentPanel_1.AgentPanel(context);
         logger.info('Initializing Verno extension...');
-        // Initialize LLM provider
-        const llmProvider = configService.get('llmProvider') || 'openai';
-        const apiKey = await vscode.window.showInputBox({
-            prompt: `Enter your ${llmProvider.toUpperCase()} API key`,
-            password: true,
-            ignoreFocusOut: true
+        // Register sidebar provider and connect AgentPanel when view is resolved
+        sidebarProvider = new SidebarProvider_1.SidebarProvider(context, logger, (webviewView) => {
+            agentPanel.setWebviewView(webviewView);
         });
-        if (!apiKey) {
-            logger.warn('No API key provided. Extension features will be limited.');
-        }
-        else {
-            if (llmProvider === 'anthropic') {
-                const provider = new llm_1.AnthropicProvider();
-                await provider.initialize(apiKey);
-                llmService.setProvider(provider);
-            }
-            else {
-                const provider = new llm_1.OpenAIProvider();
-                await provider.initialize(apiKey);
-                llmService.setProvider(provider);
-            }
-            logger.info(`LLM Provider initialized: ${llmProvider}`);
-        }
+        context.subscriptions.push(vscode.window.registerWebviewViewProvider(SidebarProvider_1.SidebarProvider.viewType, sidebarProvider));
+        logger.info('Sidebar provider registered');
         // Register all agents
         registerAllAgents();
         // Register commands
         StartRecordingCommand_1.StartRecordingCommand.register(context);
         StopRecordingCommand_1.StopRecordingCommand.register(context);
         ManageAgentsCommand_1.ManageAgentsCommand.register(context);
-        // Register main processing command
+        // Register main processing command (prompts in popup if no args)
         const processCommand = vscode.commands.registerCommand('verno.processInput', async () => {
             await processUserInput(context);
         });
-        context.subscriptions.push(processCommand, recordingStatus);
+        // Register processing command that accepts apiKey and input from webview
+        const processWithData = vscode.commands.registerCommand('verno.processInputWithData', async (apiKey, input) => {
+            await processUserInput(context, apiKey, input);
+        });
+        context.subscriptions.push(processCommand, processWithData, recordingStatus);
         logger.info('Verno extension activated successfully');
         vscode.window.showInformationMessage('Verno extension is ready!');
     }
@@ -108,6 +97,15 @@ async function activate(context) {
         vscode.window.showErrorMessage(`Verno activation failed: ${errorMsg}`);
     }
 }
+function detectAndCreateProvider(apiKey) {
+    // Detect provider based on API key format
+    if (apiKey.startsWith('AIza')) {
+        return new llm_1.GeminiProvider();
+    }
+    else {
+        return new llm_1.GroqProvider();
+    }
+}
 function registerAllAgents() {
     const mockLogger = logger;
     // Register core agents
@@ -115,17 +113,36 @@ function registerAllAgents() {
     agentRegistry.register('orchestrator', orchestrator);
     logger.info('All agents registered successfully');
 }
-async function processUserInput(context) {
+async function processUserInput(context, apiKeyArg, inputArg) {
     try {
-        const input = await vscode.window.showInputBox({
-            prompt: 'Enter your request (e.g., "Create a REST API with user authentication")',
-            ignoreFocusOut: true
-        });
+        let apiKey = apiKeyArg;
+        let input = inputArg;
+        if (!apiKey) {
+            apiKey = await vscode.window.showInputBox({
+                prompt: 'Enter your API key (Gemini: AIza... or Groq)',
+                password: true,
+                ignoreFocusOut: true
+            });
+            if (!apiKey) {
+                logger.warn('No API key provided');
+                return;
+            }
+        }
         if (!input) {
-            return;
+            input = await vscode.window.showInputBox({
+                prompt: 'Enter your request (e.g., "Create a REST API with user authentication")',
+                ignoreFocusOut: true
+            });
+            if (!input) {
+                return;
+            }
         }
         logger.info(`Processing user input: ${input}`);
         vscode.window.showInformationMessage('Processing your request...');
+        // Detect and initialize the appropriate provider based on API key format
+        const provider = detectAndCreateProvider(apiKey);
+        await provider.initialize(apiKey);
+        llmService.setProvider(provider);
         const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
         if (!workspaceRoot) {
             vscode.window.showErrorMessage('No workspace folder open');
@@ -144,14 +161,44 @@ async function processUserInput(context) {
         if (!orchestrator) {
             throw new Error('Orchestrator agent not found');
         }
+        // notify sidebar processing started
+        try {
+            agentPanel.postMessage({ type: 'processingStarted' });
+        }
+        catch (e) {
+            // ignore
+        }
         const result = await orchestrator.execute(agentContext);
         logger.info(`Processing complete: ${result}`);
-        vscode.window.showInformationMessage('Request processed successfully!');
+        // Parse workflow plan and send to sidebar
+        try {
+            const workflowSteps = JSON.parse(result);
+            logger.info(`Workflow steps: ${JSON.stringify(workflowSteps)}`);
+            agentPanel.postMessage({ type: 'workflowSteps', steps: workflowSteps });
+        }
+        catch (parseErr) {
+            logger.warn(`Failed to parse workflow result: ${parseErr}`);
+            agentPanel.postMessage({ type: 'processingResult', result });
+        }
+        vscode.window.showInformationMessage('Workflow plan created successfully!');
+        // notify sidebar if available with completion
+        try {
+            agentPanel.notifyProcessingComplete();
+        }
+        catch (e) {
+            // ignore
+        }
     }
     catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error);
         logger.error('Error processing input', error);
         vscode.window.showErrorMessage(`Processing failed: ${errorMsg}`);
+        try {
+            agentPanel.postMessage({ type: 'error', message: errorMsg });
+        }
+        catch (e) {
+            // ignore
+        }
     }
 }
 function deactivate() {
