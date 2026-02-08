@@ -28,9 +28,9 @@ Verno is a VS Code extension that brings voice-controlled AI-powered coding agen
 ## Getting Started
 
 1. Install the extension
-2. Open the Command Palette (`Ctrl+Shift+P` on Windows/Linux, `Cmd+Shift+P` on macOS)
-3. Run "Verno: Start Recording" to begin voice interaction
-4. Speak your command (e.g., "Generate a function to sort an array")
+2. Open it in the side bar
+3. Add your api key
+4. Speak or type your command (e.g., "Generate a function to sort an array")
 5. The extension will process your request and display results
 
 ## Extension Settings
