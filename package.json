@@ -8,8 +8,29 @@
     "vscode": "^1.80.0"
   },
   "main": "./out/extension.js",
-  "activationEvents": [],
+  "activationEvents": [
+    "onView:verno.agentPanel",
+    "onStartupFinished"
+  ],
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "verno-sidebar",
+          "title": "Verno",
+          "icon": "$(code)"
+        }
+      ]
+    },
+    "views": {
+      "verno-sidebar": [
+        {
+          "type": "webview",
+          "id": "verno.agentPanel",
+          "name": "Agent Control"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "verno.processInput",
