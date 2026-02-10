@@ -30,7 +30,15 @@ export interface IWorkflow {
 export interface ILLMProvider {
   initialize(apiKey: string): Promise<void>;
   generateText(prompt: string, options?: Record<string, unknown>): Promise<string>;
+  // Optional streaming generation API. onToken is called for every token/chunk produced.
+  streamGenerate?: (
+    prompt: string,
+    options: Record<string, unknown> | undefined,
+    onToken: (token: string) => void
+  ) => Promise<void>;
   getModelInfo(): Record<string, unknown>;
+  // Optional audio transcription
+  transcribeAudio?: (base64Audio: string) => Promise<string>;
 }
 
 export interface IVoiceRecorder {

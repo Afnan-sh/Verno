@@ -3,7 +3,7 @@
  * Export all agents for easy access
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DebugAgent = exports.ReviewAgent = exports.RefactorAgent = exports.TestGeneratorAgent = exports.DocumentationAgent = exports.CodeGeneratorAgent = exports.OrchestratorAgent = exports.PlannerAgent = exports.RouterAgent = exports.AgentRegistry = exports.BaseAgent = void 0;
+exports.OrchestratorEnhancedAgent = exports.FeedbackEnabledAgent = exports.PlanningAgent = exports.CodeReviewAgent = exports.QuickFlowSoloDevAgent = exports.TechWriterAgent = exports.QAEngineerAgent = exports.ProductManagerAgent = exports.DeveloperAgent = exports.UXDesignerAgent = exports.ArchitectAgent = exports.AnalystAgent = exports.MultiAgentManager = exports.DebugAgent = exports.ReviewAgent = exports.RefactorAgent = exports.TestGeneratorAgent = exports.DocumentationAgent = exports.CodeGeneratorAgent = exports.OrchestratorAgent = exports.PlannerAgent = exports.RouterAgent = exports.AgentRegistry = exports.BaseAgent = void 0;
 var BaseAgent_1 = require("./base/BaseAgent");
 Object.defineProperty(exports, "BaseAgent", { enumerable: true, get: function () { return BaseAgent_1.BaseAgent; } });
 var AgentRegistry_1 = require("./base/AgentRegistry");
@@ -26,4 +26,30 @@ var ReviewAgent_1 = require("./specialized/ReviewAgent");
 Object.defineProperty(exports, "ReviewAgent", { enumerable: true, get: function () { return ReviewAgent_1.ReviewAgent; } });
 var DebugAgent_1 = require("./specialized/DebugAgent");
 Object.defineProperty(exports, "DebugAgent", { enumerable: true, get: function () { return DebugAgent_1.DebugAgent; } });
+var MultiAgentManager_1 = require("./MultiAgentManager");
+Object.defineProperty(exports, "MultiAgentManager", { enumerable: true, get: function () { return MultiAgentManager_1.MultiAgentManager; } });
+var AnalystAgent_1 = require("./BMAD/AnalystAgent");
+Object.defineProperty(exports, "AnalystAgent", { enumerable: true, get: function () { return AnalystAgent_1.AnalystAgent; } });
+var ArchitectAgent_1 = require("./BMAD/ArchitectAgent");
+Object.defineProperty(exports, "ArchitectAgent", { enumerable: true, get: function () { return ArchitectAgent_1.ArchitectAgent; } });
+var UXDesignerAgent_1 = require("./BMAD/UXDesignerAgent");
+Object.defineProperty(exports, "UXDesignerAgent", { enumerable: true, get: function () { return UXDesignerAgent_1.UXDesignerAgent; } });
+var DeveloperAgent_1 = require("./BMAD/DeveloperAgent");
+Object.defineProperty(exports, "DeveloperAgent", { enumerable: true, get: function () { return DeveloperAgent_1.DeveloperAgent; } });
+var ProductManagerAgent_1 = require("./BMAD/ProductManagerAgent");
+Object.defineProperty(exports, "ProductManagerAgent", { enumerable: true, get: function () { return ProductManagerAgent_1.ProductManagerAgent; } });
+var QAEngineerAgent_1 = require("./BMAD/QAEngineerAgent");
+Object.defineProperty(exports, "QAEngineerAgent", { enumerable: true, get: function () { return QAEngineerAgent_1.QAEngineerAgent; } });
+var TechWriterAgent_1 = require("./BMAD/TechWriterAgent");
+Object.defineProperty(exports, "TechWriterAgent", { enumerable: true, get: function () { return TechWriterAgent_1.TechWriterAgent; } });
+var QuickFlowSoloDevAgent_1 = require("./BMAD/QuickFlowSoloDevAgent");
+Object.defineProperty(exports, "QuickFlowSoloDevAgent", { enumerable: true, get: function () { return QuickFlowSoloDevAgent_1.QuickFlowSoloDevAgent; } });
+var CodeReviewAgent_1 = require("./BMAD/CodeReviewAgent");
+Object.defineProperty(exports, "CodeReviewAgent", { enumerable: true, get: function () { return CodeReviewAgent_1.CodeReviewAgent; } });
+var PlanningAgent_1 = require("./planning/PlanningAgent");
+Object.defineProperty(exports, "PlanningAgent", { enumerable: true, get: function () { return PlanningAgent_1.PlanningAgent; } });
+var FeedbackEnabledAgent_1 = require("./FeedbackEnabledAgent");
+Object.defineProperty(exports, "FeedbackEnabledAgent", { enumerable: true, get: function () { return FeedbackEnabledAgent_1.FeedbackEnabledAgent; } });
+var OrchestratorEnhancedAgent_1 = require("./OrchestratorEnhancedAgent");
+Object.defineProperty(exports, "OrchestratorEnhancedAgent", { enumerable: true, get: function () { return OrchestratorEnhancedAgent_1.OrchestratorEnhancedAgent; } });
 //# sourceMappingURL=index.js.map

@@ -9,28 +9,9 @@
   },
   "main": "./out/extension.js",
   "activationEvents": [
-    "onView:verno.agentPanel",
-    "onStartupFinished"
+    "onView:verno.agentPanel"
   ],
   "contributes": {
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "verno-sidebar",
-          "title": "Verno",
-          "icon": "$(code)"
-        }
-      ]
-    },
-    "views": {
-      "verno-sidebar": [
-        {
-          "type": "webview",
-          "id": "verno.agentPanel",
-          "name": "Agent Control"
-        }
-      ]
-    },
     "commands": [
       {
         "command": "verno.processInput",
@@ -47,8 +28,65 @@
       {
         "command": "verno.manageAgents",
         "title": "Verno: Manage Agents"
+      },
+      {
+        "command": "verno.generateCode",
+        "title": "Verno: Generate Code"
+      },
+      {
+        "command": "verno.showDiff",
+        "title": "Verno: Show Diff"
+      },
+      {
+        "command": "verno.showOutput",
+        "title": "Verno: Show Verno Output"
+      },
+      {
+        "command": "verno.revealSidebar",
+        "title": "Verno: Reveal Sidebar"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "verno",
+          "title": "Verno",
+          "icon": "media/verno-icon.svg",
+          "type": "webview"
+        }
+      ]
+    },
+    "views": {
+      "verno": [
+        {
+          "id": "verno.agentPanel",
+          "name": "Agent Panel",
+          "type": "webview"
+        },
+        {
+          "id": "verno-enhanced-sidebar",
+          "name": "Verno Dashboard",
+          "type": "webview"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "verno.agentPanel",
+        "contents": "Click the button to activate Verno and load the Agent Panel.\n[Activate Verno](command:verno.processInput)"
+      }
+    ],
+    "configuration": {
+      "title": "Verno",
+      "properties": {
+        "verno.groqApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API Key for Groq (used for Voice Transcription)",
+          "scope": "application"
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -59,13 +97,18 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.80.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "^20.0.0",
+    "@types/vscode": "^1.80.0",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
+    "eslint": "^9.39.2",
     "typescript": "^5.0.0",
     "typescript-eslint": "^8.54.0",
-    "eslint": "^9.39.2",
-    "@vscode/test-cli": "^0.0.12",
-    "@vscode/test-electron": "^2.5.2"
+    "vscode": "^1.1.37"
+  },
+  "dependencies": {
+    "form-data": "^4.0.5",
+    "groq-sdk": "^0.37.0"
   }
 }

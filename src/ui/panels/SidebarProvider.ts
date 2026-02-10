@@ -1,17 +1,26 @@
 import * as vscode from 'vscode';
 import { Logger } from '../../utils/logger';
+import { getConversationHTML } from '../templates/conversationTemplate';
+import { LLMService } from '../../services/llm';
+import { WindowsVoiceRecorder } from '../../services/voice/WindowsVoiceRecorder';
 
 export class SidebarProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = 'verno.agentPanel';
     private logger: Logger;
+    private llmService: LLMService;
+    private windowsRecorder: WindowsVoiceRecorder | null = null;
     private onResolve?: (view: vscode.WebviewView) => void;
+    private sessionVoiceKey: string | undefined;
+    private isVoiceSessionActive: boolean = false;
 
     constructor(
         private readonly context: vscode.ExtensionContext,
         logger: Logger,
+        llmService: LLMService,
         onResolve?: (view: vscode.WebviewView) => void
     ) {
         this.logger = logger;
+        this.llmService = llmService;
         this.onResolve = onResolve;
     }
 
@@ -21,194 +30,217 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         _token: vscode.CancellationToken
     ): void {
         webviewView.webview.options = {
-            enableScripts: true,
-            localResourceRoots: [
-                vscode.Uri.joinPath(this.context.extensionUri, 'out'),
-                vscode.Uri.joinPath(this.context.extensionUri, 'media')
-            ]
+            enableScripts: true
         };
 
         webviewView.webview.html = this.getHtmlForWebview(webviewView.webview);
 
-        this.logger?.info('SidebarProvider resolved');
+        this.logger?.info('SidebarProvider resolved with conversation UI');
 
         // Handle messages from the webview
         webviewView.webview.onDidReceiveMessage(async (data) => {
             this.logger.info(`Message received: ${data.type}`);
             switch (data.type) {
+                case 'processInputSubmit':
+                    await vscode.commands.executeCommand('verno.processInputWithData', data.apiKey, data.input, data.mode, data.model);
+                    break;
+                case 'newTask':
+                    await vscode.commands.executeCommand('verno.newTask');
+                    break;
+                case 'listConversations':
+                    await vscode.commands.executeCommand('verno.listConversations');
+                    break;
+                case 'loadConversation':
+                    await vscode.commands.executeCommand('verno.loadConversation', data.conversationId);
+                    break;
+                case 'deleteConversation':
+                    await vscode.commands.executeCommand('verno.deleteConversation', data.conversationId);
+                    break;
+                case 'mcpInstall':
+                    await vscode.commands.executeCommand('verno.mcpInstall', data.serverId, data.scope || 'project');
+                    break;
+                case 'triggerUpload':
+                    this.logger.info(`Upload triggered: ${data.action}`);
+                    break;
                 case 'startRecording':
-                    await vscode.commands.executeCommand('verno.startRecording');
+                    try {
+                        if (!this.windowsRecorder) {
+                            this.windowsRecorder = new WindowsVoiceRecorder();
+                        }
+                        await this.windowsRecorder.start();
+                        this.logger.info('[Sidebar] Native recording started');
+                        this.isVoiceSessionActive = true;
+                        webviewView.webview.postMessage({ type: 'recordingStarted' });
+                    } catch (error) {
+                        this.logger.error('[Sidebar] Failed to start native recording', error as Error);
+                        vscode.window.showErrorMessage('Failed to start recording: ' + (error as Error).message);
+                        webviewView.webview.postMessage({ type: 'voiceError', message: 'Failed to start recording' });
+                    }
                     break;
                 case 'stopRecording':
-                    await vscode.commands.executeCommand('verno.stopRecording');
+                    try {
+                        if (this.windowsRecorder) {
+                            this.logger.info('[Sidebar] Stopping native recording...');
+                            const filePath = await this.windowsRecorder.stop();
+                            this.logger.info(`[Sidebar] Native recording saved to ${filePath}`);
+
+                            // Read file and transcribe
+                            const fs = require('fs');
+                            const stats = fs.statSync(filePath);
+                            const fileSizeInBytes = stats.size;
+                            this.logger.info(`[Sidebar] Recording file size: ${fileSizeInBytes} bytes`);
+
+                            if (fileSizeInBytes < 1024) {
+                                // < 1KB is basically empty (44 byte header + silence)
+                                this.logger.warn('[Sidebar] Recording is too short/empty. Aborting transcription.');
+                                vscode.window.showWarningMessage('Recording was too short or captured no audio. Please try speaking longer.');
+                                webviewView.webview.postMessage({ type: 'voiceError', message: 'Recording too short' });
+                                try { fs.unlinkSync(filePath); } catch (e) { }
+                                return;
+                            }
+
+                            const fileBuffer = fs.readFileSync(filePath);
+                            const base64Audio = fileBuffer.toString('base64');
+
+                            // Clean up file
+                            try { fs.unlinkSync(filePath); } catch (e) { }
+
+                            // PREFER GROQ WHISPER IF AVAILABLE
+                            // Check for configured Groq Key first
+                            const config = vscode.workspace.getConfiguration('verno');
+                            let groqKey = config.get<string>('groqApiKey') || this.sessionVoiceKey;
+
+                            // If not in config, check .env in workspace root
+                            if (!groqKey && vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
+                                try {
+                                    const fs = require('fs');
+                                    const path = require('path');
+                                    const envPath = path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, '.env');
+                                    if (fs.existsSync(envPath)) {
+                                        const envContent = fs.readFileSync(envPath).toString();
+                                        const match = envContent.match(/^(?:VERNO_)?GROQ_API_KEY=(.*)$/m);
+                                        if (match && match[1]) {
+                                            groqKey = match[1].trim();
+                                            this.logger.info('[Sidebar] Found Groq API Key in .env file');
+                                            // Cache it for session
+                                            this.sessionVoiceKey = groqKey;
+                                        }
+                                    }
+                                } catch (envErr) {
+                                    this.logger.warn(`[Sidebar] Error reading .env file: ${(envErr as Error).message}`);
+                                }
+                            }
+
+                            this.logger.info(`[Sidebar] Voice Config - GroqKey configured: ${!!groqKey}`);
+
+                            let transcriptionProvider: import('../../types').ILLMProvider | undefined;
+
+                            if (groqKey) {
+                                // User has a Groq key, use it specifically for efficient Whisper
+                                const { GroqProvider } = require('../../services/llm/providers/GroqProvider');
+                                const groqProvider = new GroqProvider();
+                                await groqProvider.initialize(groqKey);
+                                transcriptionProvider = groqProvider;
+                                this.logger.info('[Sidebar] Using dedicated Groq Whisper for transcription (from Config/Cache)');
+                            } else {
+                                // Fallback to current provider (Gemini etc)
+                                transcriptionProvider = await this.getLLMProvider();
+                                this.logger.info(`[Sidebar] Voice Fallback - Active Provider available: ${!!transcriptionProvider}`);
+                            }
+
+                            // If still no provider (fresh start, no config), Prompt user!
+                            if (!transcriptionProvider) {
+                                this.logger.info('[Sidebar] No active provider or config. Prompting user for Voice Key...');
+                                const inputKey = await vscode.window.showInputBox({
+                                    prompt: 'Voice Transcription requires an API Key. Enter Groq API Key (recommended) or Gemini Key. It will be saved to your settings.',
+                                    ignoreFocusOut: true,
+                                    placeHolder: 'gsk_... (Groq) or AIza... (Gemini)'
+                                });
+
+                                if (inputKey) {
+                                    if (inputKey.startsWith('gsk_')) {
+                                        const { GroqProvider } = require('../../services/llm/providers/GroqProvider');
+                                        const groqProvider = new GroqProvider();
+                                        await groqProvider.initialize(inputKey);
+                                        transcriptionProvider = groqProvider;
+
+                                        // Cache and SAVE the key
+                                        this.sessionVoiceKey = inputKey;
+                                        await config.update('groqApiKey', inputKey, vscode.ConfigurationTarget.Global);
+                                        this.logger.info('[Sidebar] Saved Groq key to configuration');
+                                    } else if (inputKey.startsWith('AIza')) {
+                                        const { GeminiProvider } = require('../../services/llm/providers/GeminiProvider');
+                                        const geminiProvider = new GeminiProvider();
+                                        await geminiProvider.initialize(inputKey);
+                                        transcriptionProvider = geminiProvider;
+                                        this.logger.info('[Sidebar] Using user-provided Gemini key');
+                                    }
+                                }
+                            }
+
+                            if (transcriptionProvider && transcriptionProvider.transcribeAudio) {
+                                this.logger.info('[Sidebar] Transcribing audio...');
+                                try {
+                                    const text = await transcriptionProvider.transcribeAudio(base64Audio);
+                                    this.logger.info(`[Sidebar] Transcription success: "${text.substring(0, 30)}..."`);
+                                    webviewView.webview.postMessage({ type: 'voiceTranscript', text });
+                                } catch (transcribeError) {
+                                    this.logger.error('[Sidebar] Transcription error', transcribeError as Error);
+                                    vscode.window.showErrorMessage('Transcription failed: ' + (transcribeError as Error).message);
+                                    webviewView.webview.postMessage({ type: 'voiceError', message: 'Transcription failed' });
+                                }
+                            } else {
+                                const msg = transcriptionProvider
+                                    ? `Current provider (${transcriptionProvider.constructor.name}) does not support audio transcription`
+                                    : 'No API Key configured for Voice. Set "verno.groqApiKey" in settings or start a chat session first.';
+
+                                vscode.window.showWarningMessage(msg);
+                                webviewView.webview.postMessage({ type: 'voiceError', message: msg });
+                            }
+                        }
+                    } catch (error) {
+                        this.logger.error('[Sidebar] Failed to stop/transcribe native recording', error as Error);
+                        vscode.window.showErrorMessage('Recording failed: ' + (error as Error).message);
+                        webviewView.webview.postMessage({ type: 'voiceError', message: 'Recording failed' });
+                    }
                     break;
-                case 'processInputSubmit':
-                    // Send data to your command handler
-                    await vscode.commands.executeCommand('verno.processInputWithData', data.apiKey, data.input);
+                case 'voiceConversationComplete':
+                    this.logger.info(`Voice conversation complete, summary length: ${data.summary?.length || 0}`);
+                    await vscode.commands.executeCommand('verno.voiceConversationComplete', data.summary, data.transcript);
                     break;
-                case 'manageAgents':
-                    await vscode.commands.executeCommand('verno.manageAgents');
+                case 'voiceSessionEnded':
+                    this.logger.info('[Sidebar] Voice session ended by user');
+                    this.isVoiceSessionActive = false;
+                    break;
+                case 'log':
+                    this.logger.info(`[Webview] ${data.message}`);
+                    break;
+                case 'showOutput':
+                    await vscode.commands.executeCommand('verno.showOutput');
+                    break;
+                case 'webviewReady':
+                    this.logger.info('[Sidebar] Webview ready signal received');
+                    if (this.isVoiceSessionActive) {
+                        this.logger.info('[Sidebar] Restoring active voice session state...');
+                        webviewView.webview.postMessage({ type: 'restoreVoiceSession' });
+                    }
                     break;
             }
         });
 
+        // Remove the fragile setTimeout
+        // if (this.isVoiceSessionActive) { ... }
+
         this.onResolve?.(webviewView);
+    }
+
+    private async getLLMProvider(): Promise<import('../../types').ILLMProvider | undefined> {
+        return this.llmService.getProvider() || undefined;
     }
 
     private getHtmlForWebview(webview: vscode.Webview): string {
         const nonce = getNonce();
-
-        return `<!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';">
-            <style>
-                body { padding: 12px; font-family: var(--vscode-font-family); color: var(--vscode-foreground); background-color: var(--vscode-sideBar-background); }
-                .page { display: none; }
-                .page.active { display: flex; flex-direction: column; gap: 12px; }
-                h3 { font-size: 11px; text-transform: uppercase; opacity: 0.8; margin: 0; }
-                input, textarea { background: var(--vscode-input-background); color: var(--vscode-foreground); border: 1px solid var(--vscode-sideBar-border); padding: 8px; border-radius: 4px; }
-                .row { display: flex; gap: 8px; }
-                button { background: var(--vscode-button-background); color: var(--vscode-button-foreground); border: none; padding: 6px 12px; cursor: pointer; border-radius: 2px; }
-                button:hover { background: var(--vscode-button-hoverBackground); }
-                button.secondary { background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); }
-                .output { font-size: 11px; padding: 8px; background: var(--vscode-input-background); border-radius: 4px; min-height: 20px; }
-            </style>
-        </head>
-        <body>
-            <div id="page-api" class="page active">
-                <h3>Setup Gemini</h3>
-                <input id="apiKey" type="password" placeholder="Enter API Key..." />
-                <button id="saveApi">Connect</button>
-            </div>
-
-            <div id="page-api-confirm" class="page">
-                <h3>API Key Found</h3>
-                <p style="font-size: 12px; color: var(--vscode-descriptionForeground); margin: 8px 0;">You have a saved API key. Would you like to use it?</p>
-                <div class="row">
-                    <button id="useExistingApi">Use Existing</button>
-                    <button id="changeApi" class="secondary">Enter New Key</button>
-                </div>
-            </div>
-
-            <div id="page-mode" class="page">
-                <h3>Select Input</h3>
-                <div class="row">
-                    <button id="textMode">Keyboard</button>
-                    <button id="voiceMode" class="secondary">Voice</button>
-                </div>
-            </div>
-
-            <div id="page-text" class="page">
-                <h3>Request</h3>
-                <textarea id="textInput" rows="4" placeholder="What should I build?"></textarea>
-                <div class="row">
-                    <button id="textSubmit">Submit</button>
-                    <button id="textBack" class="secondary">Back</button>
-                </div>
-                <div id="textOutput" class="output">Ready</div>
-            </div>
-
-            <div id="page-voice" class="page">
-                <h3>Voice Control</h3>
-                <div id="voiceStatus" class="output">Idle</div>
-                <div class="row">
-                    <button id="voiceStart">Start</button>
-                    <button id="voiceStop" class="secondary" disabled>Stop</button>
-                    <button id="voiceBack" class="secondary">Back</button>
-                </div>
-            </div>
-
-            <div id="page-workflow" class="page">
-                <h3>Workflow Plan</h3>
-                <div id="workflowSteps" class="output" style="white-space: pre-wrap; overflow-y: auto; max-height: 300px;"></div>
-                <div class="row">
-                    <button id="workflowBack" class="secondary">Back</button>
-                </div>
-            </div>
-
-            <script nonce="${nonce}">
-                const vscode = acquireVsCodeApi();
-                let state = vscode.getState() || {};
-
-                function show(pageId) {
-                    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-                    document.getElementById(pageId).classList.add('active');
-                }
-
-                // Restore state - show confirmation if key exists
-                if (state.apiKey) {
-                    show('page-api-confirm');
-                }
-
-                // Page Navigation & Actions
-                document.getElementById('saveApi').addEventListener('click', () => {
-                    const key = document.getElementById('apiKey').value;
-                    if (key) {
-                        state.apiKey = key;
-                        vscode.setState(state);
-                        show('page-mode');
-                    }
-                });
-
-                document.getElementById('useExistingApi').addEventListener('click', () => {
-                    show('page-mode');
-                });
-
-                document.getElementById('changeApi').addEventListener('click', () => {
-                    document.getElementById('apiKey').value = '';
-                    show('page-api');
-                });
-
-                document.getElementById('textMode').addEventListener('click', () => show('page-text'));
-                document.getElementById('voiceMode').addEventListener('click', () => show('page-voice'));
-                document.getElementById('textBack').addEventListener('click', () => show('page-mode'));
-                document.getElementById('voiceBack').addEventListener('click', () => show('page-mode'));
-                document.getElementById('workflowBack').addEventListener('click', () => show('page-mode'));
-
-                document.getElementById('textSubmit').addEventListener('click', () => {
-                    const input = document.getElementById('textInput').value;
-                    document.getElementById('textOutput').textContent = 'Processing...';
-                    vscode.postMessage({ type: 'processInputSubmit', apiKey: state.apiKey, input });
-                });
-
-                document.getElementById('voiceStart').addEventListener('click', () => {
-                    vscode.postMessage({ type: 'startRecording' });
-                    document.getElementById('voiceStart').disabled = true;
-                    document.getElementById('voiceStop').disabled = false;
-                    document.getElementById('voiceStatus').textContent = 'Listening...';
-                });
-
-                document.getElementById('voiceStop').addEventListener('click', () => {
-                    vscode.postMessage({ type: 'stopRecording' });
-                    document.getElementById('voiceStart').disabled = false;
-                    document.getElementById('voiceStop').disabled = true;
-                    document.getElementById('voiceStatus').textContent = 'Stopped';
-                });
-
-                window.addEventListener('message', event => {
-                    const msg = event.data;
-                    if (msg.type === 'processingComplete') {
-                        document.getElementById('textOutput').textContent = 'Done!';
-                    } else if (msg.type === 'workflowSteps') {
-                        const steps = msg.steps;
-                        let stepsHtml = '';
-                        if (Array.isArray(steps)) {
-                            steps.forEach(step => {
-                                stepsHtml += 'Step ' + step.step + ': ' + step.name + '\\n' + step.description + '\\n\\n';
-                            });
-                        } else {
-                            stepsHtml = JSON.stringify(steps, null, 2);
-                        }
-                        document.getElementById('workflowSteps').textContent = stepsHtml;
-                        show('page-workflow');
-                    }
-                });
-            </script>
-        </body>
-        </html>`;
+        return getConversationHTML(nonce);
     }
 }
 

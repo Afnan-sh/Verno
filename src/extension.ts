@@ -3,14 +3,17 @@ import { Logger } from './utils/logger';
 import { ConfigService } from './config/ConfigService';
 import { LLMService, GeminiProvider, GroqProvider } from './services/llm';
 import { AgentRegistry, OrchestratorAgent } from './agents';
+import { PlanningAgent } from './agents/planning/PlanningAgent';
 import { FileService } from './services/file/FileService';
 import { ContextBuilder } from './services/workflow/ContextBuilder';
+import { ConversationService } from './services/conversation/ConversationService';
 import { StartRecordingCommand } from './commands/StartRecordingCommand';
 import { StopRecordingCommand } from './commands/StopRecordingCommand';
 import { ManageAgentsCommand } from './commands/ManageAgentsCommand';
 import { RecordingStatus } from './ui/statusBar/RecordingStatus';
 import { AgentPanel } from './ui/panels/AgentPanel';
 import { SidebarProvider } from './ui/panels/SidebarProvider';
+import { EnhancedSidebarProvider } from './ui/panels/EnhancedSidebarProvider';
 
 let logger: Logger;
 let configService: ConfigService;
@@ -20,11 +23,14 @@ let fileService: FileService;
 let recordingStatus: RecordingStatus;
 let agentPanel: AgentPanel;
 let sidebarProvider: SidebarProvider;
+let conversationService: ConversationService;
+let currentConversationId: string | null = null;
 
 export async function activate(context: vscode.ExtensionContext) {
 	try {
 		// Initialize services
 		logger = new Logger('Verno');
+		logger.show(); // Auto-show logs on startup for debugging
 		configService = new ConfigService();
 		fileService = new FileService();
 		agentRegistry = new AgentRegistry();
@@ -34,9 +40,34 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		logger.info('Initializing Verno extension...');
 
+		// Initialize ConversationService for persistence
+		const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
+		if (workspaceRoot) {
+			conversationService = new ConversationService(workspaceRoot);
+			logger.info('ConversationService initialized for persistence');
+		}
+
+		// Wire Context Updates from LLM to UI
+		llmService.setContextUsageCallback((used, total) => {
+			agentPanel?.updateContextUsage(used, total);
+		});
+
 		// Register sidebar provider and connect AgentPanel when view is resolved
-		sidebarProvider = new SidebarProvider(context, logger, (webviewView) => {
+		sidebarProvider = new SidebarProvider(context, logger, llmService, (webviewView) => {
 			agentPanel.setWebviewView(webviewView);
+
+			// Load existing conversation when sidebar is opened
+			if (conversationService && currentConversationId) {
+				const conv = conversationService.getConversation(currentConversationId);
+				if (conv && conv.messages.length > 0) {
+					agentPanel.displayConversation(conv.messages.map(m => ({
+						role: m.role,
+						content: m.content,
+						timestamp: new Date(m.timestamp).toISOString()
+					})));
+					logger.info(`Loaded ${conv.messages.length} messages from conversation ${currentConversationId}`);
+				}
+			}
 		});
 		context.subscriptions.push(
 			vscode.window.registerWebviewViewProvider(
@@ -45,7 +76,16 @@ export async function activate(context: vscode.ExtensionContext) {
 			)
 		);
 		logger.info('Sidebar provider registered');
-	
+
+		// Register Enhanced Sidebar for Dashboard
+		const enhancedSidebar = new EnhancedSidebarProvider(workspaceRoot);
+		context.subscriptions.push(
+			vscode.window.registerWebviewViewProvider(
+				EnhancedSidebarProvider.viewType,
+				enhancedSidebar
+			)
+		);
+		logger.info('Enhanced Sidebar provider registered');
 
 		// Register all agents
 		registerAllAgents();
@@ -60,12 +100,84 @@ export async function activate(context: vscode.ExtensionContext) {
 			await processUserInput(context);
 		});
 
-		// Register processing command that accepts apiKey and input from webview
-		const processWithData = vscode.commands.registerCommand('verno.processInputWithData', async (apiKey: string, input: string) => {
-			await processUserInput(context, apiKey, input);
+		// show output channel command
+		const showOutputCmd = vscode.commands.registerCommand('verno.showOutput', async () => {
+			logger.show();
 		});
 
-		context.subscriptions.push(processCommand, processWithData, recordingStatus);
+		// Register processing command that accepts apiKey, input, mode, and model from webview
+		const processWithData = vscode.commands.registerCommand('verno.processInputWithData', async (apiKey: string, input: string, mode: 'plan' | 'code' | 'ask' = 'code', model?: string) => {
+			await processUserInput(context, apiKey, input, mode, { fromWebview: true, model });
+		});
+
+		// Register load conversation command
+		const loadConversationCmd = vscode.commands.registerCommand('verno.loadConversation', async (conversationId: string) => {
+			await loadConversation(conversationId);
+		});
+
+		// Register new task command
+		const newTaskCmd = vscode.commands.registerCommand('verno.newTask', async () => {
+			logger.info('New task requested');
+			currentConversationId = null;
+			logger.info('Ready for new task');
+		});
+
+		// Register MCP install command
+		const mcpInstallCmd = vscode.commands.registerCommand('verno.mcpInstall', async (serverId: string, scope: string) => {
+			logger.info(`MCP server install requested: ${serverId} (scope: ${scope})`);
+			vscode.window.showInformationMessage(`MCP server "${serverId}" installed (${scope}).`);
+		});
+
+		// List conversations command - sends list to webview
+		const listConvsCmd = vscode.commands.registerCommand('verno.listConversations', async () => {
+			if (!conversationService) { return; }
+			const convs = conversationService.getAllConversations();
+			const list = convs.map(c => ({
+				id: c.id,
+				title: c.title,
+				mode: c.mode || 'chat',
+				updatedAt: c.updatedAt,
+				messageCount: c.messages.length
+			}));
+			agentPanel.postMessage({ type: 'conversationList', conversations: list });
+		});
+
+		// Delete conversation command
+		const deleteConvCmd = vscode.commands.registerCommand('verno.deleteConversation', async (conversationId: string) => {
+			if (!conversationService) { return; }
+			conversationService.deleteConversation(conversationId);
+			if (currentConversationId === conversationId) { currentConversationId = null; }
+			logger.info(`Deleted conversation: ${conversationId}`);
+			// Refresh the list
+			await vscode.commands.executeCommand('verno.listConversations');
+		});
+
+		// Voice conversation complete command — receives summary from voice overlay and feeds it to the pipeline
+		const voiceConvCmd = vscode.commands.registerCommand('verno.voiceConversationComplete', async (summary: string, transcript?: any[]) => {
+			if (!summary) {
+				logger.warn('Voice conversation produced no summary');
+				return;
+			}
+			logger.info(`Voice conversation complete. Summary length: ${summary.length}, turns: ${transcript?.length || 0}`);
+			agentPanel.addMessage('system', '🎙️ Voice conversation captured. Processing your request...');
+
+			// Try to find an API key from configured providers
+			// The webview state isn't accessible from the extension, so prompt if needed
+			const apiKey = await vscode.window.showInputBox({
+				prompt: 'Enter your API key to process the voice conversation summary',
+				password: true,
+				ignoreFocusOut: true,
+				placeHolder: 'API key (Gemini: AIza... or Groq)'
+			});
+
+			if (apiKey) {
+				await processUserInput(context, apiKey, summary, 'plan', { fromWebview: false });
+			} else {
+				agentPanel.addMessage('system', 'No API key provided. Your voice summary has been added to the chat. You can send it manually using the Send button.');
+			}
+		});
+
+		context.subscriptions.push(processCommand, processWithData, showOutputCmd, recordingStatus, loadConversationCmd, newTaskCmd, mcpInstallCmd, listConvsCmd, deleteConvCmd, voiceConvCmd);
 
 		logger.info('Verno extension activated successfully');
 		vscode.window.showInformationMessage('Verno extension is ready!');
@@ -77,7 +189,6 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 function detectAndCreateProvider(apiKey: string): GeminiProvider | GroqProvider {
-	// Detect provider based on API key format
 	if (apiKey.startsWith('AIza')) {
 		return new GeminiProvider();
 	} else {
@@ -86,16 +197,51 @@ function detectAndCreateProvider(apiKey: string): GeminiProvider | GroqProvider 
 }
 
 function registerAllAgents(): void {
-	const mockLogger = logger;
+	// Register Planning Agent for plan mode conversations
+	const planningAgent = new PlanningAgent(logger, llmService);
+	agentRegistry.register('planning', planningAgent);
 
-	// Register core agents
-	const orchestrator = new OrchestratorAgent(mockLogger, agentRegistry, llmService, fileService);
+	// Register Orchestrator (Planner) for code mode pipeline
+	const orchestrator = new OrchestratorAgent(logger, agentRegistry, llmService, fileService);
 	agentRegistry.register('orchestrator', orchestrator);
 
 	logger.info('All agents registered successfully');
 }
 
-async function processUserInput(context: vscode.ExtensionContext, apiKeyArg?: string, inputArg?: string): Promise<void> {
+/**
+ * Ensure a conversation exists for the current session
+ */
+function ensureConversation(mode: 'plan' | 'code' | 'ask'): string {
+	if (!conversationService) {
+		throw new Error('ConversationService not initialized');
+	}
+
+	// Check if current conversation still exists (might have been deleted via dashboard)
+	if (currentConversationId && !conversationService.getConversation(currentConversationId)) {
+		currentConversationId = null;
+	}
+
+	// Reuse existing conversation or create new one
+	if (!currentConversationId) {
+		const convMode = mode === 'plan' ? 'planning' : mode === 'code' ? 'development' : 'chat';
+		const title = mode === 'plan' ? 'Planning' : mode === 'code' ? 'Development' : 'Ask';
+		currentConversationId = conversationService.createConversation(
+			`${title} Session`,
+			convMode as 'planning' | 'development' | 'chat'
+		);
+		logger.info(`Created new conversation: ${currentConversationId}`);
+	}
+
+	return currentConversationId;
+}
+
+async function processUserInput(
+	context: vscode.ExtensionContext,
+	apiKeyArg?: string,
+	inputArg?: string,
+	mode: 'plan' | 'code' | 'ask' = 'code',
+	options: { fromWebview?: boolean; model?: string } = {}
+): Promise<void> {
 	try {
 		let apiKey = apiKeyArg;
 		let input = inputArg;
@@ -124,72 +270,120 @@ async function processUserInput(context: vscode.ExtensionContext, apiKeyArg?: st
 			}
 		}
 
-		logger.info(`Processing user input: ${input}`);
-		vscode.window.showInformationMessage('Processing your request...');
+		logger.info(`Processing user input: ${input} (mode: ${mode}, model: ${options.model || 'auto'})`);
 
-		// Detect and initialize the appropriate provider based on API key format
-		const provider = detectAndCreateProvider(apiKey);
+		// Show thinking indicator in UI
+		agentPanel.showThinking(true);
+
+		// Add user message to conversation UI
+		// If from webview, the message is already displayed optimistically — add silently to history only
+		agentPanel.addMessage('user', input, { silent: !!options.fromWebview });
+
+		// Persist user message to disk
+		let conversationHistory = '';
+		if (conversationService) {
+			try {
+				const convId = ensureConversation(mode);
+				conversationService.addMessage(convId, 'user', input);
+				conversationHistory = conversationService.getConversationAsText(convId);
+				logger.info(`Persisted user message to conversation ${convId}`);
+			} catch (convErr) {
+				logger.warn(`Conversation persistence error: ${convErr}`);
+			}
+		}
+
+		// Initialize the appropriate provider based on model selection or API key detection
+		let provider;
+		const modelName = options.model || '';
+		if (modelName === 'groq' || (!modelName && !apiKey.startsWith('AIza'))) {
+			provider = new GroqProvider();
+			logger.info('Using Groq provider');
+		} else {
+			provider = new GeminiProvider();
+			logger.info('Using Gemini provider');
+		}
 		await provider.initialize(apiKey);
 		llmService.setProvider(provider);
 
 		const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
 		if (!workspaceRoot) {
 			vscode.window.showErrorMessage('No workspace folder open');
+			agentPanel.showThinking(false);
 			return;
 		}
 
-		// Build context
+		// Build context with conversation history
 		const agentContext = new ContextBuilder()
 			.setWorkspaceRoot(workspaceRoot)
 			.setMetadata({
 				userRequest: input,
+				conversationHistory,
+				mode,
 				timestamp: new Date().toISOString()
 			})
 			.build();
 
-		// Execute orchestrator
-		const orchestrator = agentRegistry.get('orchestrator');
-		if (!orchestrator) {
-			throw new Error('Orchestrator agent not found');
+		// Route to appropriate agent based on mode
+		let result: string;
+
+		if (mode === 'ask') {
+			// Ask mode: simple direct LLM call without orchestration
+			logger.info('Ask mode: sending directly to LLM');
+			result = await llmService.generateText(
+				`You are a helpful coding assistant. The user is asking about their project.\n\nUser question: ${input}\n\nProvide a clear, concise answer.`
+			);
+		} else if (mode === 'plan') {
+			// Plan mode: generate plan + run non-coding agents
+			const orchestrator = agentRegistry.get('orchestrator') as OrchestratorAgent;
+			if (!orchestrator) {
+				throw new Error('Orchestrator agent not found');
+			}
+			logger.info('Routing to Orchestrator.executePlan() for planning phase');
+			result = await orchestrator.executePlan(agentContext);
+		} else {
+			// Code mode: run pending coding agents or detect workspace state
+			const orchestrator = agentRegistry.get('orchestrator') as OrchestratorAgent;
+			if (!orchestrator) {
+				throw new Error('Orchestrator agent not found');
+			}
+			logger.info('Routing to Orchestrator.executeCode() for code generation');
+			result = await orchestrator.executeCode(agentContext);
 		}
 
-		// notify sidebar processing started
-		try {
-			agentPanel.postMessage({ type: 'processingStarted' });
-		} catch (e) {
-			// ignore
+		// Add result to conversation UI
+		agentPanel.addMessage('assistant', result || 'Task completed successfully!');
+		agentPanel.showThinking(false);
+
+		// Persist assistant response to disk
+		if (conversationService && currentConversationId) {
+			try {
+				conversationService.addMessage(currentConversationId, 'assistant', result || 'Task completed successfully!');
+				logger.info('Persisted assistant response to conversation');
+			} catch (convErr) {
+				logger.warn(`Failed to persist assistant response: ${convErr}`);
+			}
 		}
 
-		const result = await orchestrator.execute(agentContext);
-		logger.info(`Processing complete: ${result}`);
-
-		// Parse workflow plan and send to sidebar
-		try {
-			const workflowSteps = JSON.parse(result);
-			logger.info(`Workflow steps: ${JSON.stringify(workflowSteps)}`);
-			agentPanel.postMessage({ type: 'workflowSteps', steps: workflowSteps });
-		} catch (parseErr) {
-			logger.warn(`Failed to parse workflow result: ${parseErr}`);
-			agentPanel.postMessage({ type: 'processingResult', result });
-		}
-
-		vscode.window.showInformationMessage('Workflow plan created successfully!');
-
-		// notify sidebar if available with completion
-		try {
-			agentPanel.notifyProcessingComplete();
-		} catch (e) {
-			// ignore
-		}
+		logger.info(`Processing complete in ${mode} mode`);
+		agentPanel.notifyProcessingComplete();
 	} catch (error) {
 		const errorMsg = error instanceof Error ? error.message : String(error);
 		logger.error('Error processing input', error as Error);
-		vscode.window.showErrorMessage(`Processing failed: ${errorMsg}`);
-		try {
-			agentPanel.postMessage({ type: 'error', message: errorMsg });
-		} catch (e) {
-			// ignore
+
+		// Show error in conversation
+		agentPanel.addMessage('system', `Error: ${errorMsg}`);
+		agentPanel.showThinking(false);
+
+		// Persist error to conversation
+		if (conversationService && currentConversationId) {
+			try {
+				conversationService.addMessage(currentConversationId, 'system', `Error: ${errorMsg}`);
+			} catch (convErr) {
+				// ignore
+			}
 		}
+
+		vscode.window.showErrorMessage(`Processing failed: ${errorMsg}`);
 	}
 }
 
@@ -197,4 +391,31 @@ export function deactivate() {
 	recordingStatus.dispose();
 	logger.info('Verno extension deactivated');
 	logger.dispose();
+}
+
+/**
+ * Load a conversation into the agent panel
+ */
+async function loadConversation(conversationId: string): Promise<void> {
+	if (!conversationService || !agentPanel) { return; }
+
+	const conv = conversationService.getConversation(conversationId);
+	if (!conv) {
+		vscode.window.showErrorMessage(`Conversation ${conversationId} not found`);
+		return;
+	}
+
+	// Set as current
+	currentConversationId = conversationId;
+	conversationService.setCurrentConversation(conversationId);
+
+	// Display in UI
+	agentPanel.displayConversation(conv.messages.map(m => ({
+		role: m.role,
+		content: m.content,
+		timestamp: new Date(m.timestamp).toISOString()
+	})));
+
+	logger.info(`Loaded conversation: ${conversationId}`);
+	vscode.window.showInformationMessage(`Loaded conversation: ${conv.title || 'Untitled Session'}`);
 }

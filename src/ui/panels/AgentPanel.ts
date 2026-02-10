@@ -4,10 +4,17 @@
 
 import * as vscode from 'vscode';
 
-export class AgentPanel {
-  private webviewView: vscode.WebviewView | null = null;
+export interface ConversationMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp?: string;
+}
 
-  constructor(private context: vscode.ExtensionContext) {}
+export class AgentPanel {
+  private webviewView?: vscode.WebviewView;
+  private conversationHistory: ConversationMessage[] = [];
+
+  constructor(private context: vscode.ExtensionContext) { }
 
   /**
    * Set the webview view from the sidebar provider
@@ -58,5 +65,68 @@ export class AgentPanel {
    */
   updateStatus(agentName: string, status: string): void {
     // Status updates are handled through notification methods
+  }
+
+  /**
+   * Display conversation history
+   */
+  displayConversation(messages: ConversationMessage[]) {
+    this.conversationHistory = messages;
+    this.postMessage({
+      type: 'conversationHistory',
+      messages: messages
+    });
+  }
+
+  /**
+   * Add a new message to conversation
+   */
+  /**
+   * Add a new message to conversation
+   * @param silent If true, adds to history but does not send to webview (prevents double echo)
+   */
+  addMessage(role: 'user' | 'assistant' | 'system', content: string, options?: { silent?: boolean }) {
+    const message: ConversationMessage = {
+      role,
+      content,
+      timestamp: new Date().toISOString()
+    };
+    this.conversationHistory.push(message);
+
+    if (!options?.silent) {
+      this.postMessage({
+        type: 'newMessage',
+        message
+      });
+    }
+  }
+
+  /**
+   * Show thinking indicator
+   */
+  showThinking(show: boolean) {
+    this.postMessage({
+      type: 'thinking',
+      show
+    });
+  }
+
+  /**
+   * Clear conversation
+   */
+  clearConversation() {
+    this.conversationHistory = [];
+    this.postMessage({ type: 'clearConversation' });
+  }
+
+  /**
+   * Send context usage update
+   */
+  updateContextUsage(used: number, total: number) {
+    this.postMessage({
+      type: 'contextUsage',
+      used,
+      total
+    });
   }
 }

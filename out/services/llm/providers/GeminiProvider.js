@@ -65,6 +65,51 @@ class GeminiProvider {
             endpoint: this.apiEndpoint
         };
     }
+    async transcribeAudio(base64Audio) {
+        if (!this.apiKey) {
+            throw new Error('Gemini API key not set');
+        }
+        try {
+            const url = `${this.apiEndpoint}?key=${this.apiKey}`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    contents: [
+                        {
+                            parts: [
+                                {
+                                    text: "Please transcribe the following audio file exactly as spoken. Do not add any introductory or concluding text, just the transcription."
+                                },
+                                {
+                                    inlineData: {
+                                        mimeType: "audio/wav",
+                                        data: base64Audio
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                    generationConfig: {
+                        temperature: 0.2, // Low temperature for accuracy
+                        maxOutputTokens: 2000
+                    }
+                })
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`Gemini Audio Transcription error: ${errorData.error?.message || response.statusText}`);
+            }
+            const data = await response.json();
+            return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        }
+        catch (error) {
+            console.error('[GeminiProvider] Transcribe error:', error);
+            throw error;
+        }
+    }
 }
 exports.GeminiProvider = GeminiProvider;
 //# sourceMappingURL=GeminiProvider.js.map
