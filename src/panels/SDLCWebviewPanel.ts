@@ -284,11 +284,20 @@ Respond ONLY with valid JSON matching this structure:
         button { padding: 8px 16px; background: var(--vscode-button-background); color: var(--vscode-button-foreground); border: none; cursor: pointer; margin-right: 10px; }
         button:hover { background: var(--vscode-button-hoverBackground); }
         textarea, input { width: 100%; padding: 8px; box-sizing: border-box; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border); margin-bottom: 15px; }
-        .prd-section { margin-bottom: 20px; }
+        .prd-section { margin-bottom: 24px; border-left: 3px solid var(--vscode-panel-border); padding-left: 12px; }
+        .prd-section.security-section { border-left-color: #e67e22; }
         .pill { display: inline-block; padding: 2px 6px; font-size: 10px; border-radius: 10px; background: #666; color: #fff; margin-left: 10px; }
         .pill.pending { background: #f39c12; }
         .pill.pushed { background: #2ecc71; }
         .pill.failed { background: #e74c3c; }
+        /* Compliance flag badges */
+        .compliance-flags { margin-top: 10px; }
+        .flag-badge { display: block; margin: 4px 0; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+        .flag-gdpr { background: rgba(52,152,219,0.15); border-left: 3px solid #3498db; color: #3498db; }
+        .flag-hipaa { background: rgba(231,76,60,0.15); border-left: 3px solid #e74c3c; color: #e74c3c; }
+        .flag-owasp { background: rgba(230,126,34,0.15); border-left: 3px solid #e67e22; color: #e67e22; }
+        /* Security agent highlight in debate log */
+        .chat-msg.security-agent { border-left: 3px solid #e74c3c; background: rgba(231,76,60,0.08); }
     </style>
 </head>
 <body>
@@ -392,15 +401,37 @@ Respond ONLY with valid JSON matching this structure:
 
         function appendDebateMsg(m) {
             const d = document.createElement('div');
-            d.className = 'chat-msg';
-            d.innerHTML = '<b>' + m.agentId.toUpperCase() + ' (Round ' + m.round + '):</b> <br/> ' + m.content;
+            const isSecurityAgent = m.agentId === 'security';
+            d.className = 'chat-msg' + (isSecurityAgent ? ' security-agent' : '');
+            const agentLabel = isSecurityAgent
+                ? '<b style="color:#e74c3c">🔐 SECURITY (Round ' + m.round + '):</b>'
+                : '<b>' + m.agentId.toUpperCase() + ' (Round ' + m.round + '):</b>';
+            d.innerHTML = agentLabel + ' <br/> ' + m.content;
             document.getElementById('debateLog').appendChild(d);
         }
 
         function renderPRD(prd) {
             let html = '<h2>' + prd.title + '</h2>';
             prd.sections.forEach(s => {
-                html += '<div class="prd-section"><h4>' + s.title + '</h4><div>' + s.content.replace(/\\n/g, '<br/>') + '</div></div>';
+                const isSecSection = s.title.toLowerCase().includes('security');
+                const cssClass = 'prd-section' + (isSecSection ? ' security-section' : '');
+                // Content: replace literal \\n and newlines with <br/>
+                const contentHtml = s.content
+                    .replace(/\\n/g, '<br/>')
+                    .replace(/\n/g, '<br/>');
+                let flagsHtml = '';
+                if (s.complianceFlags && s.complianceFlags.length > 0) {
+                    flagsHtml = '<div class="compliance-flags">';
+                    s.complianceFlags.forEach(flag => {
+                        let cls = 'flag-badge ';
+                        if (flag.includes('GDPR')) cls += 'flag-gdpr';
+                        else if (flag.includes('HIPAA')) cls += 'flag-hipaa';
+                        else cls += 'flag-owasp';
+                        flagsHtml += '<span class="' + cls + '">' + flag + '</span>';
+                    });
+                    flagsHtml += '</div>';
+                }
+                html += '<div class="' + cssClass + '"><h4>' + s.title + '</h4><div>' + contentHtml + '</div>' + flagsHtml + '</div>';
             });
             document.getElementById('prdContent').innerHTML = html;
         }
