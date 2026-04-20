@@ -1,4 +1,4 @@
-import { BaseAgent } from '../base/BaseAgent';
+﻿import { BaseAgent } from '../base/BaseAgent';
 import { IAgentContext } from '../../types';
 import { LLMService } from '../../services/llm';
 import { FileService } from '../../services/file/FileService';
@@ -20,9 +20,9 @@ import { EventEmitter } from 'events';
 
 const exec = util.promisify(childProcess.exec);
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 // Types
-// ─────────────────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 interface IssueRecord {
   severity: IssueSeverity;
@@ -65,9 +65,9 @@ interface ProjectEnv {
   bundler: string | null;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Terminal Session — persistent PTY shell with streaming output
-// ─────────────────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// Terminal Session ΓÇö persistent PTY shell with streaming output
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 class TerminalSession extends EventEmitter {
   private ptyProcess: pty.IPty | null = null;
@@ -223,25 +223,25 @@ class TerminalSession extends EventEmitter {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// DeveloperAgent — Claude Code-level implementation
-// ─────────────────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+// DeveloperAgent ΓÇö Claude Code-level implementation
+// ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 /**
- * DeveloperAgent — "Amelia"
+ * DeveloperAgent ΓÇö "Amelia"
  *
  * Capabilities on par with Claude Code:
- *  • Persistent PTY terminal session (internal + external commands)
- *  • Full multi-language environment detection & toolchain management
- *  • Intelligent dependency resolution (npm/yarn/pnpm/bun/pip/cargo/go)
- *  • Deep self-healing loop with structured root-cause analysis
- *  • Pre-write syntax validation (tsc --noEmit on in-memory content)
- *  • Import graph–powered RAG context retrieval
- *  • Incremental diff patching + full file generation
- *  • Security audit (npm audit, pip-audit, cargo audit)
- *  • Git-aware change management
- *  • Parallel quality checks with timeout guards
- *  • Automatic package.json / requirements.txt / go.mod reconciliation
+ *  ΓÇó Persistent PTY terminal session (internal + external commands)
+ *  ΓÇó Full multi-language environment detection & toolchain management
+ *  ΓÇó Intelligent dependency resolution (npm/yarn/pnpm/bun/pip/cargo/go)
+ *  ΓÇó Deep self-healing loop with structured root-cause analysis
+ *  ΓÇó Pre-write syntax validation (tsc --noEmit on in-memory content)
+ *  ΓÇó Import graphΓÇôpowered RAG context retrieval
+ *  ΓÇó Incremental diff patching + full file generation
+ *  ΓÇó Security audit (npm audit, pip-audit, cargo audit)
+ *  ΓÇó Git-aware change management
+ *  ΓÇó Parallel quality checks with timeout guards
+ *  ΓÇó Automatic package.json / requirements.txt / go.mod reconciliation
  */
 export class DeveloperAgent extends BaseAgent {
   name = 'developer';
@@ -252,10 +252,10 @@ export class DeveloperAgent extends BaseAgent {
   private importTracer?: ImportTracer;
   private contextEngine?: ContextEngine;
 
-  /** Persistent PTY shell — stays alive for the whole execute() call */
+  /** Persistent PTY shell ΓÇö stays alive for the whole execute() call */
   private terminal?: TerminalSession;
 
-  /** Detected project environment — cached after first detection */
+  /** Detected project environment ΓÇö cached after first detection */
   private env?: ProjectEnv;
 
   constructor(
@@ -267,7 +267,7 @@ export class DeveloperAgent extends BaseAgent {
     super(logger);
   }
 
-  // ── Lazy service init ────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Lazy service init ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
   private lazyInitRagServices(workspaceRoot: string): void {
     if (this.contextEngine) return;
@@ -279,10 +279,10 @@ export class DeveloperAgent extends BaseAgent {
     this.contextEngine = new ContextEngine(this.importTracer, this.indexingService, workspaceRoot);
   }
 
-  // ── Main entry point ─────────────────────────────────────────────────────
+  // ΓöÇΓöÇ Main entry point ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
   async execute(context: IAgentContext): Promise<string> {
-    this.log('🚀 Developer Agent (Amelia) — Claude Code-level execution starting');
+    this.log('≡ƒÜÇ Developer Agent (Amelia) ΓÇö Claude Code-level execution starting');
 
     if (context.workspaceRoot) {
       this.feedbackService = new FeedbackService(context.workspaceRoot);
@@ -290,11 +290,11 @@ export class DeveloperAgent extends BaseAgent {
       // Open persistent terminal session
       this.terminal = new TerminalSession(context.workspaceRoot);
       await this.terminal.open();
-      this.log('✅ Terminal session opened');
+      this.log('Γ£à Terminal session opened');
 
       // Detect project environment ONCE upfront
       this.env = await this.detectProjectEnvironment(context.workspaceRoot);
-      this.log(`📦 Environment: ${JSON.stringify(this.env)}`);
+      this.log(`≡ƒôª Environment: ${JSON.stringify(this.env)}`);
     }
 
     const MAX_RETRIES = 5;
@@ -305,7 +305,7 @@ export class DeveloperAgent extends BaseAgent {
 
     try {
       for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-        this.log(`\n━━━ Attempt ${attempt}/${MAX_RETRIES} ━━━`);
+        this.log(`\nΓöüΓöüΓöü Attempt ${attempt}/${MAX_RETRIES} ΓöüΓöüΓöü`);
 
         if (attempt > 1) {
           completedTasks.length = 0;
@@ -313,7 +313,7 @@ export class DeveloperAgent extends BaseAgent {
           // Keep issues for error context injection into next prompt
         }
 
-        // ── Context gathering ──────────────────────────────────────────────
+        // ΓöÇΓöÇ Context gathering ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         const prev = (context.metadata?.previousOutputs || {}) as Record<string, string>;
         const analysis = prev['analyst'] || '';
         const architecture = prev['architect'] || '';
@@ -322,7 +322,7 @@ export class DeveloperAgent extends BaseAgent {
         const editMode = !!context.metadata?.editMode;
         const userRequest = (context.metadata?.userRequest as string) || 'implement feature';
 
-        // ── Load all project documentation (.md files in root and .planning/)
+        // ΓöÇΓöÇ Load all project documentation (.md files in root and .planning/)
         const projectDocs = context.workspaceRoot
           ? this.loadAllProjectDocs(context.workspaceRoot, prev)
           : { prd: prev['pm'] || '', ux: prev['uxdesigner'] || '', auxiliary: '' };
@@ -331,21 +331,21 @@ export class DeveloperAgent extends BaseAgent {
         if (projectDocs.prd) this.log(`PRD loaded: ${projectDocs.prd.length} chars`);
         if (projectDocs.auxiliary) this.log(`Auxiliary docs loaded: ${projectDocs.auxiliary.length} chars`);
 
-        // ── RAG context retrieval ──────────────────────────────────────────
+        // ΓöÇΓöÇ RAG context retrieval ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         let existingFilesContext = '';
         if (context.workspaceRoot) {
           this.lazyInitRagServices(context.workspaceRoot);
           if (this.indexingService && this.contextEngine) {
-            this.log('🔍 Building tiered code context...');
+            this.log('≡ƒöì Building tiered code context...');
             // Background indexing
             void this.indexingService.indexWorkspace(context.workspaceRoot, this);
             // Synchronous tier 1+2 retrieval
             existingFilesContext = await this.contextEngine.getTieredContext(userRequest, 12);
-            this.log(`📚 Context: ${existingFilesContext.length} chars retrieved`);
+            this.log(`≡ƒôÜ Context: ${existingFilesContext.length} chars retrieved`);
           }
         }
 
-        // ── Filesystem snapshot for smarter context ────────────────────────
+        // ΓöÇΓöÇ Filesystem snapshot for smarter context ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         const fsSnapshot = context.workspaceRoot
           ? await this.buildFilesystemSnapshot(context.workspaceRoot)
           : '';
@@ -353,7 +353,7 @@ export class DeveloperAgent extends BaseAgent {
         const detectedLang = this.detectLanguage(userRequest);
         const hasExistingCode = existingFilesContext.length > 50;
 
-        // ── Build prompt ───────────────────────────────────────────────────
+        // ΓöÇΓöÇ Build prompt ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         const errorContext = attempt > 1
           ? this.buildErrorContext(issues)
           : '';
@@ -367,7 +367,7 @@ export class DeveloperAgent extends BaseAgent {
         // Clear issues from previous attempt AFTER building error context
         if (attempt > 1) issues.length = 0;
 
-        // ── LLM generation ─────────────────────────────────────────────────
+        // ΓöÇΓöÇ LLM generation ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         let buffer = '';
         try {
           await this.llmService.streamGenerate(prompt, undefined, (token: string) => {
@@ -383,7 +383,7 @@ export class DeveloperAgent extends BaseAgent {
 
         if (!context.workspaceRoot) break;
 
-        // ── File writing ───────────────────────────────────────────────────
+        // ΓöÇΓöÇ File writing ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         const generatedFiles = this.parseCodeFiles(buffer);
         this.log(`Parsed ${generatedFiles.length} file(s) from LLM output`);
 
@@ -391,24 +391,24 @@ export class DeveloperAgent extends BaseAgent {
         const preValidationIssues = await this.preValidateFiles(generatedFiles, context.workspaceRoot);
         if (preValidationIssues.length > 0) {
           issues.push(...preValidationIssues);
-          this.log(`Pre-validation found ${preValidationIssues.length} issue(s) — will include in retry context`);
+          this.log(`Pre-validation found ${preValidationIssues.length} issue(s) ΓÇö will include in retry context`);
         }
 
         await this.writeFiles(generatedFiles, context.workspaceRoot, completedTasks, issues);
 
-        // ── Reconcile manifests ────────────────────────────────────────────
+        // ΓöÇΓöÇ Reconcile manifests ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         await this.reconcileManifests(context.workspaceRoot, buffer, issues, suggestions);
 
-        // ── Install dependencies ───────────────────────────────────────────
+        // ΓöÇΓöÇ Install dependencies ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         await this.installDependencies(context.workspaceRoot, completedTasks, issues, suggestions);
 
-        // ── Quality gates (parallel where safe) ────────────────────────────
+        // ΓöÇΓöÇ Quality gates (parallel where safe) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         await this.runQualityGates(context.workspaceRoot, completedTasks, issues, suggestions);
 
-        // ── Security scan ──────────────────────────────────────────────────
+        // ΓöÇΓöÇ Security scan ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         await this.runSecurityScan(context.workspaceRoot, completedTasks, issues, suggestions);
 
-        // ── Git snapshot ───────────────────────────────────────────────────
+        // ΓöÇΓöÇ Git snapshot ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         if (this.env?.hasGit) {
           await this.gitSnapshot(context.workspaceRoot, `Amelia: ${userRequest.substring(0, 72)}`);
         }
@@ -418,18 +418,18 @@ export class DeveloperAgent extends BaseAgent {
         await this.safeWriteFile(implPath, buffer);
         this.changeTracker.recordChange(implPath, buffer);
 
-        // ── Self-healing check ─────────────────────────────────────────────
+        // ΓöÇΓöÇ Self-healing check ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
         const fatals = issues.filter(i => i.severity === 'high' || i.severity === 'critical');
         if (fatals.length === 0) {
-          this.log(`Attempt ${attempt} succeeded — no fatal issues`);
+          this.log(`Attempt ${attempt} succeeded ΓÇö no fatal issues`);
           break;
         }
 
         const autoFixable = fatals.filter(i => i.autoFixed);
-        this.log(`🔧 ${fatals.length} fatal(s), ${autoFixable.length} auto-fixed. Retrying...`);
+        this.log(`≡ƒöº ${fatals.length} fatal(s), ${autoFixable.length} auto-fixed. Retrying...`);
 
         if (attempt === MAX_RETRIES) {
-          this.log('Max retries reached — proceeding with remaining issues');
+          this.log('Max retries reached ΓÇö proceeding with remaining issues');
         }
       }
 
@@ -443,9 +443,9 @@ export class DeveloperAgent extends BaseAgent {
     return finalBuffer;
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
+  // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
   // Environment Detection
-  // ══════════════════════════════════════════════════════════════════════════
+  // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
   private async detectProjectEnvironment(workspaceRoot: string): Promise<ProjectEnv> {
     const env: ProjectEnv = {
@@ -528,9 +528,9 @@ export class DeveloperAgent extends BaseAgent {
     return env;
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
+  // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
   // Filesystem Snapshot (compact directory tree for LLM context)
-  // ══════════════════════════════════════════════════════════════════════════
+  // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
   private async buildFilesystemSnapshot(workspaceRoot: string, maxDepth = 4, maxFiles = 200): Promise<string> {
     const lines: string[] = [];
@@ -567,9 +567,9 @@ export class DeveloperAgent extends BaseAgent {
     return lines.join('\n');
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
+  // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
   // Pre-write Validation
-  // ══════════════════════════════════════════════════════════════════════════
+  // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
   /**
    * Validate generated files BEFORE writing them to disk.
@@ -587,7 +587,7 @@ export class DeveloperAgent extends BaseAgent {
         if (file.isDiff) continue; // Diffs are validated post-apply
         const ext = path.extname(file.name).toLowerCase();
 
-        // TypeScript/JavaScript — write to tmp and run tsc
+        // TypeScript/JavaScript ΓÇö write to tmp and run tsc
         if (['.ts', '.tsx', '.js', '.jsx'].includes(ext)) {
           const tmpFile = path.join(tmpDir, path.basename(file.name));
           fs.writeFileSync(tmpFile, file.content, 'utf-8');
@@ -602,7 +602,7 @@ export class DeveloperAgent extends BaseAgent {
           } catch { /* tsc not available, skip */ }
         }
 
-        // JSON — parse directly
+        // JSON ΓÇö parse directly
         if (ext === '.json') {
           try { JSON.parse(file.content); }
           catch (e: any) {
@@ -610,7 +610,7 @@ export class DeveloperAgent extends BaseAgent {
           }
         }
 
-        // Python — py_compile
+        // Python ΓÇö py_compile
         if (ext === '.py' && this.env?.hasPython) {
           const tmpFile = path.join(tmpDir, path.basename(file.name));
           fs.writeFileSync(tmpFile, file.content, 'utf-8');
@@ -629,9 +629,9 @@ export class DeveloperAgent extends BaseAgent {
     return issues;
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
+  // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
   // File Writing
-  // ══════════════════════════════════════════════════════════════════════════
+  // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
   private async writeFiles(
     files: GeneratedFile[],
@@ -676,7 +676,7 @@ export class DeveloperAgent extends BaseAgent {
     const hunks = [...diffContent.matchAll(/<<<<\n([\s\S]*?)\n====\n([\s\S]*?)\n>>>>/g)];
 
     if (hunks.length === 0) {
-      // No hunks — treat as full replacement
+      // No hunks ΓÇö treat as full replacement
       fs.writeFileSync(filePath, diffContent, 'utf-8');
       this.changeTracker.recordChange(filePath, diffContent);
       return;
@@ -688,7 +688,7 @@ export class DeveloperAgent extends BaseAgent {
       if (src.includes(oldCode)) {
         src = src.replace(oldCode, newCode);
       } else {
-        // Fuzzy match — find closest line and warn
+        // Fuzzy match ΓÇö find closest line and warn
         issues.push({
           severity: 'medium',
           description: `Diff hunk not found exactly in ${path.basename(filePath)}`,
@@ -715,12 +715,12 @@ export class DeveloperAgent extends BaseAgent {
     } catch { /* best-effort */ }
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
+  // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
   // Manifest Reconciliation
-  // ══════════════════════════════════════════════════════════════════════════
+  // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
   /**
-   * Reconcile package manifests — ensure all imports referenced in generated
+   * Reconcile package manifests ΓÇö ensure all imports referenced in generated
    * files are present in the manifest, and fix JSON syntax issues.
    */
   private async reconcileManifests(
@@ -828,9 +828,9 @@ export class DeveloperAgent extends BaseAgent {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
+  // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
   // Dependency Installation
-  // ══════════════════════════════════════════════════════════════════════════
+  // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
   private async installDependencies(
     workspaceRoot: string,
@@ -843,7 +843,7 @@ export class DeveloperAgent extends BaseAgent {
 
     // Node
     if (pm && fs.existsSync(path.join(workspaceRoot, 'package.json'))) {
-      this.log(`📦 Installing Node dependencies with ${pm}...`);
+      this.log(`≡ƒôª Installing Node dependencies with ${pm}...`);
       const cmd = pm === 'npm' ? 'npm install' : pm === 'yarn' ? 'yarn' : pm === 'pnpm' ? 'pnpm install' : 'bun install';
       const result = await this.terminal.run(cmd, 180_000);
 
@@ -866,7 +866,7 @@ export class DeveloperAgent extends BaseAgent {
 
     // Python
     if (this.env?.hasPython && fs.existsSync(path.join(workspaceRoot, 'requirements.txt'))) {
-      this.log('🐍 Installing Python dependencies...');
+      this.log('≡ƒÉì Installing Python dependencies...');
       const result = await this.terminal.run(
         `${this.env.pythonBin} -m pip install -r requirements.txt --quiet`, 120_000
       );
@@ -879,7 +879,7 @@ export class DeveloperAgent extends BaseAgent {
 
     // Rust
     if (this.env?.hasRust && fs.existsSync(path.join(workspaceRoot, 'Cargo.toml'))) {
-      this.log('🦀 Fetching Rust dependencies...');
+      this.log('≡ƒªÇ Fetching Rust dependencies...');
       const result = await this.terminal.run('cargo fetch', 120_000);
       if (result.exitCode !== 0) {
         issues.push({ severity: 'medium', description: 'cargo fetch failed', context: result.stderr.substring(0, 400) });
@@ -890,7 +890,7 @@ export class DeveloperAgent extends BaseAgent {
 
     // Go
     if (this.env?.hasGo && fs.existsSync(path.join(workspaceRoot, 'go.mod'))) {
-      this.log('🔵 Downloading Go modules...');
+      this.log('≡ƒö╡ Downloading Go modules...');
       const result = await this.terminal.run('go mod tidy', 120_000);
       if (result.exitCode !== 0) {
         issues.push({ severity: 'medium', description: 'go mod tidy failed', context: result.stderr.substring(0, 400) });
@@ -903,9 +903,9 @@ export class DeveloperAgent extends BaseAgent {
   private async autoFixNpmError(workspaceRoot: string, errorOutput: string, issues: IssueRecord[]): Promise<boolean> {
     let fixed = false;
 
-    // Fix: peer dependency conflicts — use legacy-peer-deps
+    // Fix: peer dependency conflicts ΓÇö use legacy-peer-deps
     if (errorOutput.includes('peer dep') || errorOutput.includes('ERESOLVE')) {
-      this.log('🔧 Auto-fix: adding --legacy-peer-deps flag');
+      this.log('≡ƒöº Auto-fix: adding --legacy-peer-deps flag');
       const npmrc = path.join(workspaceRoot, '.npmrc');
       const current = fs.existsSync(npmrc) ? fs.readFileSync(npmrc, 'utf-8') : '';
       if (!current.includes('legacy-peer-deps')) {
@@ -917,7 +917,7 @@ export class DeveloperAgent extends BaseAgent {
 
     // Fix: package-lock conflict
     if (errorOutput.includes('npm error code ELOCKVERIFY') || errorOutput.includes('package-lock.json')) {
-      this.log('🔧 Auto-fix: deleting package-lock.json and node_modules');
+      this.log('≡ƒöº Auto-fix: deleting package-lock.json and node_modules');
       const lockFile = path.join(workspaceRoot, 'package-lock.json');
       const nmDir = path.join(workspaceRoot, 'node_modules');
       if (fs.existsSync(lockFile)) fs.unlinkSync(lockFile);
@@ -938,9 +938,9 @@ export class DeveloperAgent extends BaseAgent {
     return fixed;
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
+  // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
   // Quality Gates
-  // ══════════════════════════════════════════════════════════════════════════
+  // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
   private async runQualityGates(
     workspaceRoot: string,
@@ -949,7 +949,7 @@ export class DeveloperAgent extends BaseAgent {
     suggestions: string[]
   ): Promise<void> {
     if (!this.terminal) return;
-    this.log('🔬 Running quality gates...');
+    this.log('≡ƒö¼ Running quality gates...');
 
     // Run all applicable checks in sequence (order matters for dependency chain)
     const checks = [
@@ -970,17 +970,17 @@ export class DeveloperAgent extends BaseAgent {
 
   private async runTypeCheck(workspaceRoot: string, completedTasks: string[], issues: IssueRecord[]): Promise<void> {
     if (!fs.existsSync(path.join(workspaceRoot, 'tsconfig.json'))) return;
-    this.log('🔷 TypeScript check...');
+    this.log('≡ƒö╖ TypeScript check...');
     const result = await this.terminal!.run('npx tsc --noEmit', 60_000);
     if (result.exitCode !== 0) {
       const errors = this.parseTscErrors(result.stdout + result.stderr);
       for (const e of errors) {
         issues.push({ severity: 'high', description: e.message, context: e.context, file: e.file, line: e.line });
       }
-      this.log(`❌ TypeScript: ${errors.length} error(s)`);
+      this.log(`Γ¥î TypeScript: ${errors.length} error(s)`);
     } else {
       completedTasks.push('TypeScript type check passed');
-      this.log('✅ TypeScript OK');
+      this.log('Γ£à TypeScript OK');
     }
   }
 
@@ -1009,7 +1009,7 @@ export class DeveloperAgent extends BaseAgent {
       if (!pkg.scripts?.build) return;
     } catch { return; }
 
-    this.log('🏗️  Running build...');
+    this.log('≡ƒÅù∩╕Å  Running build...');
     const result = await this.terminal!.run('npm run build', 120_000);
     if (result.exitCode !== 0) {
       issues.push({
@@ -1019,7 +1019,7 @@ export class DeveloperAgent extends BaseAgent {
       });
     } else {
       completedTasks.push('Build succeeded');
-      this.log('✅ Build OK');
+      this.log('Γ£à Build OK');
     }
   }
 
@@ -1042,7 +1042,7 @@ export class DeveloperAgent extends BaseAgent {
       return;
     }
 
-    this.log('🧪 Running tests...');
+    this.log('≡ƒº¬ Running tests...');
     const testCmd = this.env?.testRunner === 'vitest' ? 'npx vitest run' : 'npm test -- --passWithNoTests';
     const result = await this.terminal!.run(testCmd, 120_000);
 
@@ -1054,7 +1054,7 @@ export class DeveloperAgent extends BaseAgent {
       });
     } else {
       completedTasks.push('All tests passed');
-      this.log('✅ Tests OK');
+      this.log('Γ£à Tests OK');
     }
   }
 
@@ -1065,13 +1065,13 @@ export class DeveloperAgent extends BaseAgent {
     suggestions: string[]
   ): Promise<void> {
     if (!this.env?.linter) return;
-    this.log(`🧹 Running ${this.env.linter}...`);
+    this.log(`≡ƒº╣ Running ${this.env.linter}...`);
     const cmd = this.env.linter === 'biome'
       ? 'npx biome check .'
       : 'npx eslint . --max-warnings=0 --format=compact';
     const result = await this.terminal!.run(cmd, 30_000);
     if (result.exitCode !== 0) {
-      // Lint errors are low severity — don't block
+      // Lint errors are low severity ΓÇö don't block
       issues.push({ severity: 'low', description: 'Lint issues found', context: result.stdout.substring(0, 400) });
       suggestions.push('Fix lint warnings for better code quality');
     } else {
@@ -1084,7 +1084,7 @@ export class DeveloperAgent extends BaseAgent {
     const pyFiles = this.findFiles(workspaceRoot, '.py').slice(0, 50);
     if (pyFiles.length === 0) return;
 
-    this.log('🐍 Python type/lint check...');
+    this.log('≡ƒÉì Python type/lint check...');
 
     // mypy if available
     const result = await this.terminal!.run(
@@ -1100,7 +1100,7 @@ export class DeveloperAgent extends BaseAgent {
 
   private async runRustChecks(workspaceRoot: string, completedTasks: string[], issues: IssueRecord[]): Promise<void> {
     if (!this.env?.hasRust) return;
-    this.log('🦀 Rust check...');
+    this.log('≡ƒªÇ Rust check...');
     const result = await this.terminal!.run('cargo check 2>&1', 60_000);
     if (result.exitCode !== 0) {
       issues.push({ severity: 'high', description: 'cargo check failed', context: result.stdout.substring(0, 400) });
@@ -1111,7 +1111,7 @@ export class DeveloperAgent extends BaseAgent {
 
   private async runGoChecks(workspaceRoot: string, completedTasks: string[], issues: IssueRecord[]): Promise<void> {
     if (!this.env?.hasGo) return;
-    this.log('🔵 Go vet...');
+    this.log('≡ƒö╡ Go vet...');
     const result = await this.terminal!.run('go vet ./... 2>&1', 30_000);
     if (result.exitCode !== 0) {
       issues.push({ severity: 'medium', description: 'go vet issues', context: result.stdout.substring(0, 300) });
@@ -1120,9 +1120,9 @@ export class DeveloperAgent extends BaseAgent {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
+  // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
   // Security Scanning
-  // ══════════════════════════════════════════════════════════════════════════
+  // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
   private async runSecurityScan(
     workspaceRoot: string,
@@ -1133,7 +1133,7 @@ export class DeveloperAgent extends BaseAgent {
     if (!this.terminal) return;
 
     if (this.env?.hasNode && fs.existsSync(path.join(workspaceRoot, 'package-lock.json'))) {
-      this.log('🔒 npm audit...');
+      this.log('≡ƒöÆ npm audit...');
       const result = await this.terminal.run('npm audit --audit-level=high --json 2>&1 || true', 30_000);
       try {
         const report = JSON.parse(result.stdout);
@@ -1158,22 +1158,22 @@ export class DeveloperAgent extends BaseAgent {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
+  // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
   // Git Integration
-  // ══════════════════════════════════════════════════════════════════════════
+  // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
   private async gitSnapshot(workspaceRoot: string, message: string): Promise<void> {
     if (!this.terminal) return;
     try {
       await this.terminal.run('git add -A', 10_000);
       await this.terminal.run(`git commit -m "${message.replace(/"/g, "'")}" --allow-empty`, 10_000);
-      this.log(`📌 Git snapshot: ${message}`);
-    } catch { /* Non-critical — git might not be initialised */ }
+      this.log(`≡ƒôî Git snapshot: ${message}`);
+    } catch { /* Non-critical ΓÇö git might not be initialised */ }
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
+  // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
   // Package.json Sanitisation
-  // ══════════════════════════════════════════════════════════════════════════
+  // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
   private sanitizeAndUpgradePackageJson(packageJsonPath: string): void {
     try {
@@ -1205,7 +1205,7 @@ export class DeveloperAgent extends BaseAgent {
           const curMajor = parseInt(cur.replace(/[^\d]/, ''), 10) || 0;
           const goodMajor = parseInt(goodVer.replace(/[^\d]/, ''), 10) || 0;
           if (curMajor < goodMajor) {
-            this.log(`⬆️  ${dep}: ${cur} → ${goodVer}`);
+            this.log(`Γ¼å∩╕Å  ${dep}: ${cur} ΓåÆ ${goodVer}`);
             pkg[section][dep] = goodVer;
             changed = true;
           }
@@ -1214,16 +1214,16 @@ export class DeveloperAgent extends BaseAgent {
 
       if (changed) {
         fs.writeFileSync(packageJsonPath, JSON.stringify(pkg, null, 2), 'utf-8');
-        this.log('✅ package.json sanitized');
+        this.log('Γ£à package.json sanitized');
       }
     } catch (err: any) {
       this.log(`sanitizePackageJson error: ${err.message}`, 'warn');
     }
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
+  // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
   // Code Parsing
-  // ══════════════════════════════════════════════════════════════════════════
+  // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
   private parseCodeFiles(content: string): GeneratedFile[] {
     const files: GeneratedFile[] = [];
@@ -1262,7 +1262,7 @@ export class DeveloperAgent extends BaseAgent {
 
     if (files.length > 0) return files;
 
-    // TIER 3: Fallback — language-tagged fences
+    // TIER 3: Fallback ΓÇö language-tagged fences
     const langToExt: Record<string, string> = {
       html: '.html', htm: '.html', css: '.css', scss: '.scss', less: '.less',
       javascript: '.js', js: '.js', jsx: '.jsx',
@@ -1309,14 +1309,14 @@ export class DeveloperAgent extends BaseAgent {
     return DEFAULTS[lang] || `file_${index}${ext}`;
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
+  // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
   // Prompt Builders
-  // ══════════════════════════════════════════════════════════════════════════
+  // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
   private buildErrorContext(issues: IssueRecord[]): string {
     const fatal = issues.filter(i => ['critical', 'high', 'medium'].includes(i.severity));
     if (!fatal.length) return '';
-    return '\n\n## ERRORS FROM PREVIOUS ATTEMPT — FIX THESE FIRST:\n' +
+    return '\n\n## ERRORS FROM PREVIOUS ATTEMPT ΓÇö FIX THESE FIRST:\n' +
       fatal.map(i => `### ${i.severity.toUpperCase()}: ${i.description}${i.file ? ` [${i.file}${i.line ? `:${i.line}` : ''}]` : ''}\n${i.context}\n`).join('\n');
   }
 
@@ -1423,26 +1423,26 @@ ${conversationHistory ? `## CONVERSATION HISTORY\n${conversationHistory.substrin
 ${errorContext}
 
 ## IMPLEMENTATION RULES
-1. Generate FULLY COMPLETE, WORKING code — no stubs, no TODOs, no placeholders.
+1. Generate FULLY COMPLETE, WORKING code ΓÇö no stubs, no TODOs, no placeholders.
 2. Every function must have a complete implementation.
 3. Include ALL necessary files: entry points, configs, tests, README.
 4. All imports must be correctly resolved.
 5. Include package.json / requirements.txt / go.mod / Cargo.toml as appropriate.
 6. Write at least one test file with meaningful tests.
-7. Handle errors properly — never swallow exceptions silently.
+7. Handle errors properly ΓÇö never swallow exceptions silently.
 8. Use TypeScript strict mode when writing TypeScript.
 ${docs.ux ? `9. UI MUST be visually styled per the UX Design Specification above. NO blank/unstyled HTML structures.\n` : ''}
 ${docs.prd ? `10. Every feature and acceptance criterion in the PRD MUST be implemented.\n` : ''}
 ${detectedLang ? `11. ONLY use ${detectedLang}. Do not introduce other languages.\n` : ''}
 
-## OUTPUT FORMAT — MANDATORY
+## OUTPUT FORMAT ΓÇö MANDATORY
 Each file MUST be wrapped like this:
 
 \`\`\`FILE: relative/path/to/file.ext
 ...complete file content...
 \`\`\`
 
-Output ALL files using this format. Never describe what you would do — write the actual code.`;
+Output ALL files using this format. Never describe what you would do ΓÇö write the actual code.`;
   }
 
   private buildEditPrompt(
@@ -1490,18 +1490,18 @@ ${errorContext}
 
 ## EDITING RULES
 1. Only output files that need to change or new files that need to be created.
-2. Show the COMPLETE content of every modified file — never partial snippets.
+2. Show the COMPLETE content of every modified file ΓÇö never partial snippets.
 3. Do not recreate unchanged files.
 4. Preserve existing code style and patterns unless overriding per UX/PRD spec.
 5. All imports must remain valid after your changes.
 6. Update tests to cover your changes.
-${docs.ux ? `7. UI MUST match the UX Design Specification — no unstyled components or plain HTML.\n` : ''}
+${docs.ux ? `7. UI MUST match the UX Design Specification ΓÇö no unstyled components or plain HTML.\n` : ''}
 ${docs.prd ? `8. All PRD features must be present in the final code.\n` : ''}
 ${detectedLang ? `9. ONLY use ${detectedLang}.\n` : ''}
 
-## OUTPUT FORMAT — MANDATORY
+## OUTPUT FORMAT ΓÇö MANDATORY
 
-For modifying existing files (preferred — saves tokens):
+For modifying existing files (preferred ΓÇö saves tokens):
 \`\`\`diff
 FILE: relative/path/to/existing-file.ext
 <<<<
@@ -1519,9 +1519,9 @@ For entirely new files:
 Output code only. No explanations outside of code comments.`;
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
+  // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
   // Utilities
-  // ══════════════════════════════════════════════════════════════════════════
+  // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
   private findFiles(dir: string, ext: string, maxCount = 100): string[] {
     const results: string[] = [];
@@ -1561,9 +1561,9 @@ Output code only. No explanations outside of code comments.`;
     return undefined;
   }
 
-  // ══════════════════════════════════════════════════════════════════════════
+  // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
   // Feedback
-  // ══════════════════════════════════════════════════════════════════════════
+  // ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ
 
   private generateFeedback(
     completedTasks: string[],

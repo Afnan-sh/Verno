@@ -124,15 +124,22 @@ export class SDLCWebviewPanel {
         if (prd) {
             // Debate already done in sidebar — jump straight to PRD review
             SDLCWebviewPanel.currentPanel.state.prdDocument = prd;
+
+            // Save state immediately prior to timeout so that if the webview 
+            // requests load-state it gets the correct phase
+            SDLCWebviewPanel.currentPanel.state.currentPhase = 'PRD_REVIEW';
+            SDLCWebviewPanel.currentPanel.saveState();
+
+            // Keep timeout as a fallback but allow load-state to trigger render natively
             setTimeout(() => {
-                SDLCWebviewPanel.currentPanel?.setPhase('PRD_REVIEW');
+                SDLCWebviewPanel.currentPanel?.panel.webview.postMessage({ type: 'phase-changed', phase: 'PRD_REVIEW' });
                 SDLCWebviewPanel.currentPanel?.panel.webview.postMessage({ type: 'prd-ready', payload: prd });
-            }, 300);
+            }, 800); // increased timeout to allow larger webview to hook events
         } else if (topic) {
             // Legacy: show topic input with pre-filled topic
             setTimeout(() => {
                 SDLCWebviewPanel.currentPanel?.panel.webview.postMessage({ type: 'init-topic', topic });
-            }, 500);
+            }, 800);
         }
     }
 
@@ -475,8 +482,8 @@ Respond ONLY with valid JSON matching this structure:
     <!-- PRE-LOAD Check -->
     <div id="loading" class="section active" style="text-align:center; padding:40px; opacity:0.7;">
         <div style="font-size:24px; margin-bottom:8px;">⚙️</div>
-        <div>Preparing PRD Review…</div>
-        <div style="font-size:11px; margin-top:8px; opacity:0.5;">The AI debate runs in the sidebar chat panel.</div>
+        <div>Loading SDLC Workspace…</div>
+        <div style="font-size:11px; margin-top:8px; opacity:0.5;">Please wait while the AI syncs with your project.</div>
     </div>
 
     <!-- TOPIC_INPUT -->
@@ -540,13 +547,10 @@ Respond ONLY with valid JSON matching this structure:
             const msg = e.data;
             if (msg.type === 'state-loaded') {
                 state = msg.state;
-                if (state.currentPhase !== 'TOPIC_INPUT') {
-                    showSection(state.currentPhase);
-                    if (state.debateMessages) state.debateMessages.forEach(appendDebateMsg);
-                    if (state.prdDocument) renderPRD(state.prdDocument);
-                    if (state.epics && state.epics.length>0) renderEpics(state.epics);
-                }
-                // else stay on loading spinner — prd-ready will arrive shortly
+                showSection(state.currentPhase);
+                if (state.debateMessages && state.debateMessages.length > 0) state.debateMessages.forEach(appendDebateMsg);
+                if (state.prdDocument) renderPRD(state.prdDocument);
+                if (state.epics && state.epics.length > 0) renderEpics(state.epics);
             } else if (msg.type === 'init-topic') {
                 // Legacy path only: pre-fill topic input without auto-triggering debate
                 const ti = document.getElementById('topicInput');
@@ -599,29 +603,44 @@ Respond ONLY with valid JSON matching this structure:
         }
 
         function renderPRD(prd) {
-            let html = '<h2>' + prd.title + '</h2>';
-            prd.sections.forEach(s => {
-                const isSecSection = s.title.toLowerCase().includes('security');
-                const cssClass = 'prd-section' + (isSecSection ? ' security-section' : '');
-                // Content: replace literal \\n and newlines with <br/>
-                const contentHtml = s.content
-                    .replace(/\\n/g, '<br/>')
-                    .replace(/\n/g, '<br/>');
-                let flagsHtml = '';
-                if (s.complianceFlags && s.complianceFlags.length > 0) {
-                    flagsHtml = '<div class="compliance-flags">';
-                    s.complianceFlags.forEach(flag => {
-                        let cls = 'flag-badge ';
-                        if (flag.includes('GDPR')) cls += 'flag-gdpr';
-                        else if (flag.includes('HIPAA')) cls += 'flag-hipaa';
-                        else cls += 'flag-owasp';
-                        flagsHtml += '<span class="' + cls + '">' + flag + '</span>';
-                    });
-                    flagsHtml += '</div>';
+            try {
+                let html = '<h2>' + (prd.title || 'Product Requirements Document') + '</h2>';
+                if (!prd.sections || !Array.isArray(prd.sections)) {
+                    document.getElementById('prdContent').innerHTML = html + '<p>No valid sections output from AI.</p>';
+                    return;
                 }
-                html += '<div class="' + cssClass + '"><h4>' + s.title + '</h4><div>' + contentHtml + '</div>' + flagsHtml + '</div>';
-            });
-            document.getElementById('prdContent').innerHTML = html;
+                prd.sections.forEach(s => {
+                    const sTitle = typeof s.title === 'string' ? s.title : 'Section';
+                    const isSecSection = sTitle.toLowerCase().includes('security');
+                    const cssClass = 'prd-section' + (isSecSection ? ' security-section' : '');
+                    
+                    let textContent = '';
+                    if (typeof s.content === 'string') textContent = s.content;
+                    else if (s.content) textContent = JSON.stringify(s.content);
+                    
+                    // Content: replace literal \\n and newlines with <br/>
+                    const contentHtml = textContent
+                        .replace(/\\\\n/g, '<br/>')
+                        .replace(/\\n/g, '<br/>');
+                    let flagsHtml = '';
+                    if (s.complianceFlags && s.complianceFlags.length > 0) {
+                        flagsHtml = '<div class="compliance-flags">';
+                        s.complianceFlags.forEach(flag => {
+                            let cls = 'flag-badge ';
+                            if (flag.includes('GDPR')) cls += 'flag-gdpr';
+                            else if (flag.includes('HIPAA')) cls += 'flag-hipaa';
+                            else cls += 'flag-owasp';
+                            flagsHtml += '<span class="' + cls + '">' + flag + '</span>';
+                        });
+                        flagsHtml += '</div>';
+                    }
+                    html += '<div class="' + cssClass + '"><h4>' + sTitle + '</h4><div>' + contentHtml + '</div>' + flagsHtml + '</div>';
+                });
+                document.getElementById('prdContent').innerHTML = html;
+            } catch (err) {
+                console.error('[Webview] Failed to render PRD:', err);
+                document.getElementById('prdContent').innerHTML = '<div style="color:var(--destructive)">Failed to render PRD. See logs.</div>';
+            }
         }
 
         function renderEpics(epics) {
