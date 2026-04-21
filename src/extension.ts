@@ -35,6 +35,8 @@ import { registerSecretScanCommands } from './commands/secret-scan-commands';
 import { ReadmeSyncService } from './services/documentation/ReadmeSyncService';
 import { registerDocumentationCommands } from './commands/DocumentationCommands';
 import { WelcomePanel } from './ui/onboarding/WelcomePanel';
+import { JiraSetupWebview } from './jira/JiraSetupWebview';
+import { JiraAuthService } from './jira/JiraAuthService';
 
 let logger: Logger;
 let configService: ConfigService;
@@ -293,23 +295,23 @@ export async function activate(context: vscode.ExtensionContext) {
 			const orchestrator = new DebateOrchestrator(llmService, logger);
 
 			// Show user message in sidebar chat
-			agentPanel.addMessage('user', `🏗️ Start SDLC: ${topic}`);
+			agentPanel.addMessage('user', `Start SDLC: ${topic}`);
 			agentPanel.showThinking(true);
-			agentPanel.addMessage('system', '⚙️ Verno SDLC pipeline started. 8 AI agents are debating your requirements…');
+			agentPanel.addMessage('system', ' Verno SDLC pipeline started. 8 AI agents are debating your requirements…');
 
 			try {
 				const prd = await orchestrator.runDebate(topic, (msg: import('./types/sdlc').DebateMessage) => {
 					const agentIcons: Record<string, string> = {
-						analyst: '📊', architect: '🏛️', ux: '🎨', developer: '💻',
-						pm: '📋', qa: '🧪', techwriter: '📝', security: '🔐'
+						analyst: '', architect: '', ux: '', developer: '',
+						pm: '', qa: '', techwriter: '', security: ''
 					};
-					const icon = agentIcons[msg.agentId] || '🤖';
+					const icon = agentIcons[msg.agentId] || '';
 					const roundLabel = msg.type === 'consensus' ? 'CONSENSUS' : `Round ${msg.round}`;
 					agentPanel.addMessage('assistant', `${icon} **${msg.agentId.toUpperCase()}** (${roundLabel}):\n\n${msg.content}`);
 				});
 
 				agentPanel.showThinking(false);
-				agentPanel.addMessage('system', `✅ PRD generated: **${prd.title}**\n\nFiles written to \`.verno/PRD.md\` and \`.verno/prd.json\`.\n\nOpening PRD review panel…`);
+				agentPanel.addMessage('system', `PRD generated: **${prd.title}**\n\nFiles written to \`.verno/PRD.md\` and \`.verno/prd.json\`.\n\nOpening PRD review panel…`);
 
 				// Persist to conversation
 				if (conversationService) {
@@ -327,7 +329,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			} catch (err) {
 				agentPanel.showThinking(false);
 				const msg = err instanceof Error ? err.message : String(err);
-				agentPanel.addMessage('system', `❌ SDLC pipeline error: ${msg}`);
+				agentPanel.addMessage('system', `SDLC pipeline error: ${msg}`);
 				logger.error('[startSDLC] Pipeline failed', err as Error);
 				vscode.window.showErrorMessage(`Verno SDLC Error: ${msg}`);
 			}
@@ -397,7 +399,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				return;
 			}
 			logger.info(`Voice conversation complete. Summary length: ${summary.length}, turns: ${transcript?.length || 0}`);
-			agentPanel.addMessage('system', '🎙️ Voice conversation captured. Processing your request...');
+			agentPanel.addMessage('system', 'Voice conversation captured. Processing your request...');
 
 			// Retrieve API key from SecretStorage (try groq first)
 			let apiKey = await configService.getApiKey('groq') || await configService.getApiKey('gemini');
@@ -422,7 +424,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			}
 
 			// Show transcription in status bar
-			vscode.window.setStatusBarMessage(`🎙️ "${transcribedText}"`, 3000);
+			vscode.window.setStatusBarMessage(`"${transcribedText}"`, 3000);
 			logger.info(`Voice input (raw): "${transcribedText}"`);
 
 			// Sanitize: correct misheard identifiers against active file symbols
@@ -558,7 +560,13 @@ export async function activate(context: vscode.ExtensionContext) {
 			vscode.window.showInformationMessage(`Verno mode: ${vernoMode === 'chat' ? '💬 Conversational' : '🏗️ SDLC Pipeline'}`);
 		});
 
-		context.subscriptions.push(processCommand, processWithData, showOutputCmd, recordingStatus, loadConversationCmd, newTaskCmd, mcpInstallCmd, listConvsCmd, deleteConvCmd, voiceConvCmd, processVoiceCmd, newConversationCmd, startSDLCCmd, startBMADCmd, clearApiKeysCmd, saveApiKeyCmd, deleteApiKeyCmd, generateObservabilityCmd, toggleModeCmd, modeToggle);
+		// Initialize JiraAuthService singleton with context (needed by SDLCWebviewPanel + setupJira)
+		JiraAuthService.getInstance(context);
+
+		// Jira setup command — opens the Jira connection wizard standalone (no PRD flow required)
+		const setupJiraCmd = vscode.commands.registerCommand('verno.setupJira', () => {
+			JiraSetupWebview.createOrShow(context, logger);
+		});
 
 		// Bug 2 fix: command that SidebarProvider calls on webview mount to eagerly
 		// initialize the LLM provider before the user clicks any button.
@@ -570,7 +578,8 @@ export async function activate(context: vscode.ExtensionContext) {
 				logger.warn('[ensureLLMReady] No API key found — user must configure one via the Profile button.');
 			}
 		});
-		context.subscriptions.push(ensureLLMReadyCmd);
+
+		context.subscriptions.push(processCommand, processWithData, showOutputCmd, recordingStatus, loadConversationCmd, newTaskCmd, mcpInstallCmd, listConvsCmd, deleteConvCmd, voiceConvCmd, processVoiceCmd, newConversationCmd, startSDLCCmd, startBMADCmd, clearApiKeysCmd, saveApiKeyCmd, deleteApiKeyCmd, generateObservabilityCmd, toggleModeCmd, modeToggle, setupJiraCmd, ensureLLMReadyCmd);
 
 		logger.info('Verno extension activated successfully');
 		vscode.window.showInformationMessage('Verno extension is ready!');
