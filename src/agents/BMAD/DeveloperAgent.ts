@@ -1,4 +1,4 @@
-﻿import { BaseAgent } from '../base/BaseAgent';
+import { BaseAgent } from '../base/BaseAgent';
 import { IAgentContext } from '../../types';
 import { LLMService } from '../../services/llm';
 import { FileService } from '../../services/file/FileService';
@@ -11,7 +11,6 @@ import { ImportTracer } from '../../services/rag/ImportTracer';
 import { ContextEngine } from '../../services/rag/ContextEngine';
 import { SymbolChunker } from '../../services/rag/SymbolChunker';
 import * as childProcess from 'child_process';
-import * as pty from 'node-pty';           // real PTY: npm i node-pty
 import * as util from 'util';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -70,13 +69,13 @@ interface ProjectEnv {
 // ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 class TerminalSession extends EventEmitter {
-  private ptyProcess: pty.IPty | null = null;
+  private ptyProcess: childProcess.ChildProcess | null = null;
   private outputBuffer = '';
   private isReady = false;
   private cwd: string;
   private SENTINEL = '__CMD_DONE__';
 
-  constructor(cwd: string) {
+  constructor(cwd: string, private log: (msg: string) => void = () => {}) {
     super();
     this.cwd = cwd;
   }
@@ -85,7 +84,8 @@ class TerminalSession extends EventEmitter {
   async open(): Promise<void> {
     if (this.ptyProcess) return;
 
-    const shell = process.platform === 'win32' ? 'cmd.exe' : (process.env.SHELL || '/bin/bash');
+    const isWin = process.platform === 'win32';
+    const shell = isWin ? 'cmd.exe' : (process.env.SHELL || '/bin/bash');
     const env = {
       ...process.env,
       TERM: 'xterm-256color',
@@ -97,27 +97,34 @@ class TerminalSession extends EventEmitter {
       PIP_NO_INPUT: '1',
     };
 
-    this.ptyProcess = pty.spawn(shell, [], {
-      name: 'xterm-256color',
-      cols: 220,
-      rows: 50,
+    this.log(`Spawning shell process: ${shell} at ${this.cwd}`);
+
+    this.ptyProcess = childProcess.spawn(shell, [], {
       cwd: this.cwd,
-      env: env as Record<string, string>,
+      env: env as NodeJS.ProcessEnv,
+      shell: false,
     });
 
-    this.ptyProcess.onData((data: string) => {
-      this.outputBuffer += data;
-      this.emit('data', data);
-    });
+    const handleData = (data: Buffer | string) => {
+      const str = data.toString();
+      this.outputBuffer += str;
+      this.emit('data', str);
+    };
 
-    this.ptyProcess.onExit(({ exitCode }) => {
-      this.emit('exit', exitCode);
+    if (this.ptyProcess.stdout) this.ptyProcess.stdout.on('data', handleData);
+    if (this.ptyProcess.stderr) this.ptyProcess.stderr.on('data', handleData);
+
+    this.ptyProcess.on('exit', (code) => {
+      this.log(`Shell process exited with code ${code}`);
+      this.emit('exit', code || 0);
       this.ptyProcess = null;
     });
 
+    this.log('Waiting for shell prompt...');
     // Wait for shell prompt
     await this.waitFor(/[$#>]\s*$/, 3000);
     this.isReady = true;
+    this.log('Shell process is ready.');
   }
 
   /**
@@ -130,9 +137,12 @@ class TerminalSession extends EventEmitter {
     const start = Date.now();
     this.outputBuffer = '';
 
+    const isWin = process.platform === 'win32';
     // Write command + sentinel
-    const sentinelCmd = `echo "${this.SENTINEL}:$?"`;
-    this.ptyProcess!.write(`${command}\n${sentinelCmd}\n`);
+    const sentinelCmd = isWin ? `echo ${this.SENTINEL}:%ERRORLEVEL%` : `echo "${this.SENTINEL}:$?"`;
+    this.ptyProcess!.stdin?.write(`${command}\n${sentinelCmd}\n`);
+
+    this.log(`TerminalSession running: ${command}`);
 
     // Collect until sentinel appears
     const output = await this.waitForSentinel(timeoutMs);
@@ -145,7 +155,7 @@ class TerminalSession extends EventEmitter {
     // Strip control characters and sentinel lines
     const clean = this.stripAnsi(output)
       .split('\n')
-      .filter(l => !l.includes(this.SENTINEL) && !l.includes(sentinelCmd) && !l.startsWith(`${command}`))
+      .filter(l => !l.includes(this.SENTINEL) && (!isWin || !l.includes(sentinelCmd)) && !l.startsWith(`${command}`))
       .join('\n')
       .trim();
 
@@ -161,7 +171,7 @@ class TerminalSession extends EventEmitter {
 
   /** Write text to stdin of the current process (e.g., answer prompts) */
   write(text: string): void {
-    this.ptyProcess?.write(text);
+    this.ptyProcess?.stdin?.write(text);
   }
 
   close(): void {
@@ -170,34 +180,49 @@ class TerminalSession extends EventEmitter {
   }
 
   private waitFor(pattern: RegExp, timeoutMs: number): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => resolve(), timeoutMs); // Best-effort
+    return new Promise((resolve) => {
+      let resolved = false;
       const handler = (data: string) => {
         if (pattern.test(data)) {
+          if (resolved) return;
+          resolved = true;
           clearTimeout(timer);
           this.off('data', handler);
           resolve();
         }
       };
+      const timer = setTimeout(() => {
+        if (resolved) return;
+        resolved = true;
+        this.log(`waitFor timed out after ${timeoutMs}ms waiting for ${pattern}`);
+        this.off('data', handler);
+        resolve(); // Best-effort
+      }, timeoutMs);
       this.on('data', handler);
     });
   }
 
   private waitForSentinel(timeoutMs: number): Promise<string> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       let accumulated = '';
-      const timer = setTimeout(() => {
-        resolve(accumulated + this.outputBuffer);
-      }, timeoutMs);
-
+      let resolved = false;
       const handler = (data: string) => {
         accumulated += data;
         if (accumulated.includes(this.SENTINEL)) {
+          if (resolved) return;
+          resolved = true;
           clearTimeout(timer);
           this.off('data', handler);
           resolve(accumulated);
         }
       };
+      const timer = setTimeout(() => {
+        if (resolved) return;
+        resolved = true;
+        this.log(`waitForSentinel timed out after ${timeoutMs}ms`);
+        this.off('data', handler);
+        resolve(accumulated + this.outputBuffer);
+      }, timeoutMs);
       this.on('data', handler);
     });
   }
@@ -288,7 +313,7 @@ export class DeveloperAgent extends BaseAgent {
       this.feedbackService = new FeedbackService(context.workspaceRoot);
 
       // Open persistent terminal session
-      this.terminal = new TerminalSession(context.workspaceRoot);
+      this.terminal = new TerminalSession(context.workspaceRoot, (msg) => this.log(msg));
       await this.terminal.open();
       this.log('Γ£à Terminal session opened');
 
@@ -455,31 +480,50 @@ export class DeveloperAgent extends BaseAgent {
       frameworks: [], testRunner: null, linter: null, formatter: null, bundler: null,
     };
 
+    const isWin = process.platform === 'win32';
     const exists = (p: string) => fs.existsSync(path.join(workspaceRoot, p));
+    const findFiles = (pattern: string) => {
+        try {
+            const files = fs.readdirSync(workspaceRoot);
+            if (pattern.startsWith('*.')) {
+                const ext = pattern.slice(1);
+                return files.some(f => f.endsWith(ext));
+            }
+            return files.includes(pattern);
+        } catch { return false; }
+    };
     const binExists = async (bin: string) => {
-      try { await exec(`which ${bin}`); return true; } catch { return false; }
+      try { 
+          const cmd = isWin ? `where ${bin}` : `which ${bin}`;
+          await exec(cmd); 
+          return true; 
+      } catch { return false; }
     };
 
+    this.log('Detecting environment files...');
     // File markers
     if (exists('package.json')) env.hasNode = true;
     if (exists('requirements.txt') || exists('pyproject.toml') || exists('setup.py')) env.hasPython = true;
     if (exists('go.mod')) env.hasGo = true;
     if (exists('Cargo.toml')) env.hasRust = true;
-    if (exists('*.csproj') || exists('*.sln') || exists('global.json')) env.hasDotnet = true;
+    if (findFiles('*.csproj') || findFiles('*.sln') || exists('global.json')) env.hasDotnet = true;
     if (exists('pom.xml') || exists('build.gradle')) env.hasJava = true;
     if (exists('Dockerfile') || exists('docker-compose.yml')) env.hasDocker = true;
     if (exists('.git')) env.hasGit = true;
 
+    this.log('Detecting package manager...');
     // Package manager
     if (exists('bun.lockb')) env.packageManager = 'bun';
     else if (exists('pnpm-lock.yaml')) env.packageManager = 'pnpm';
     else if (exists('yarn.lock')) env.packageManager = 'yarn';
     else if (env.hasNode) env.packageManager = 'npm';
 
+    this.log('Detecting python binary...');
     // Python binary
     if (await binExists('python3')) env.pythonBin = 'python3';
     else if (await binExists('python')) env.pythonBin = 'python';
 
+    this.log('Detecting Node...');
     // Node version
     if (env.hasNode) {
       try {
