@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Hexagon, X, BookOpen, MessageSquare, Lightbulb } from 'lucide-react';
 import { useState } from 'react';
@@ -16,9 +17,9 @@ import SettingsPanel from './SettingsPanel';
  */
 function ConcaveLeft({ color }: { color: string }) {
     return (
-        <div className="absolute top-0 -left-[20px] w-[20px] h-[20px]" style={{ color }}>
+        <div className="absolute top-0 -left-[20px] w-[20px] h-[20px] overflow-hidden" style={{ color }}>
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 0 L20 20 Q20 0 0 0 Z" fill="currentColor" />
+                <path d="M20 0 H20 V20 C20 9 11 0 0 0 Z" fill="currentColor" />
             </svg>
         </div>
     );
@@ -26,9 +27,9 @@ function ConcaveLeft({ color }: { color: string }) {
 
 function ConcaveRight({ color }: { color: string }) {
     return (
-        <div className="absolute top-0 -right-[20px] w-[20px] h-[20px]" style={{ color }}>
+        <div className="absolute top-0 -right-[20px] w-[20px] h-[20px] overflow-hidden" style={{ color }}>
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M0 0 L0 20 Q0 0 20 0 Z" fill="currentColor" />
+                <path d="M0 0 H0 V20 C0 9 9 0 20 0 Z" fill="currentColor" />
             </svg>
         </div>
     );
@@ -37,6 +38,10 @@ function ConcaveRight({ color }: { color: string }) {
 export default function Navbar() {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isHelpOpen, setIsHelpOpen] = useState(false);
+    const pathname = usePathname();
+
+    // Don't render the global navbar on workspace pages — it has its own header
+    if (pathname?.startsWith('/workspace')) return null;
 
     const handleHomeClick = (e: React.MouseEvent) => {
         if (typeof window !== 'undefined' && window.location.pathname === '/') {
