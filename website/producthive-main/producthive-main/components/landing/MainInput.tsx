@@ -140,6 +140,7 @@ function SettingsContent({
                         onChange={(e) => onChange('preferredModel', e.target.value)}
                         className="w-full px-3 py-1.5 bg-muted/60 border border-border rounded-lg text-xs text-foreground outline-none focus:ring-1 focus:ring-primary/30"
                     >
+                        <option value="test">Test (Env Key)</option>
                         <option value="Groq">Groq (Multi-model)</option>
                         <option value="OpenAI">OpenAI</option>
                         <option value="Qwen">Qwen</option>
@@ -272,9 +273,6 @@ export default function MainInput() {
 
     // Models
     const [models, setModels] = useState<ModelOption[]>([]);
-    const [selectedModel, setSelectedModel] = useState<ModelOption | null>(null);
-    const [showModels, setShowModels] = useState(false);
-    const modelBtnRef = useRef<HTMLButtonElement>(null);
 
     // Files
     const [files, setFiles] = useState<File[]>([]);
@@ -303,25 +301,49 @@ export default function MainInput() {
     // Outer wrapper ref — popovers position relative to this
     const wrapperRef = useRef<HTMLDivElement>(null);
 
+    // Computed active model based on settings
+    const activeModelId = settingsData.preferredModel === 'Groq' ? (settingsData.groqModel || 'llama-3.3-70b-versatile') : settingsData.preferredModel;
+    let activeModel = models.find(m => m.id === activeModelId || m.id.includes(activeModelId) || activeModelId.includes(m.id));
+    if (!activeModel) {
+        // If not found in the list, construct a fallback
+        // We only use the provider name if it's not 'Groq', otherwise we try to use the specific Groq model name
+        const fallbackName = settingsData.preferredModel === 'Groq' 
+            ? (settingsData.groqModel || 'Groq Model')
+            : settingsData.preferredModel;
+            
+        activeModel = {
+            id: activeModelId,
+            name: fallbackName,
+            provider: settingsData.preferredModel.toLowerCase(),
+            costTier: 'free'
+        };
+    }
+
     // ── Fetch models ────────────────────────────────────────────────────
     useEffect(() => {
         fetch('/api/models')
             .then(r => r.json())
             .then(data => {
-                if (data.models?.length) {
-                    setModels(data.models);
-                    const def = data.models.find((m: ModelOption) => m.id === data.default) ?? data.models[0];
-                    setSelectedModel(def);
+                const fetchedModels = Array.isArray(data) ? data : data.models;
+                if (fetchedModels && fetchedModels.length > 0) {
+                    setModels(fetchedModels);
+                } else {
+                    throw new Error('No models found');
                 }
             })
             .catch(() => {
                 const fallback: ModelOption[] = [
-                    { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', provider: 'vertex', costTier: 'low' },
-                    { id: 'gemini-flash', name: 'Gemini 1.5 Flash', provider: 'vertex', costTier: 'low' },
+                    { id: 'test', name: 'Test (Env Key)', provider: 'test', costTier: 'free' },
+                    { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', provider: 'google', costTier: 'free' },
+                    { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', provider: 'google', costTier: 'paid' },
+                    { id: 'gpt-4o', name: 'GPT-4o', provider: 'openai', costTier: 'paid' },
+                    { id: 'gpt-4o-mini', name: 'GPT-4o Mini', provider: 'openai', costTier: 'low' },
+                    { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', provider: 'anthropic', costTier: 'paid' },
                     { id: 'llama-3.3-70b', name: 'Llama 3.3 70B', provider: 'groq', costTier: 'free' },
+                    { id: 'qwen-2.5-32b', name: 'Qwen 2.5 32B', provider: 'groq', costTier: 'free' },
+                    { id: 'moonshot-v1-auto', name: 'Kimi (Moonshot)', provider: 'moonshot', costTier: 'low' },
                 ];
                 setModels(fallback);
-                setSelectedModel(fallback[0]);
             });
     }, []);
 
@@ -334,7 +356,6 @@ export default function MainInput() {
     useEffect(() => {
         function handle(e: MouseEvent) {
             if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-                setShowModels(false);
                 setShowSettings(false);
                 setShowModes(false);
             }
@@ -392,7 +413,7 @@ export default function MainInput() {
                     topic: input.trim(),
                     projectType: selectedType,
                     operationalMode,
-                    modelId: selectedModel?.id ?? '',
+                    modelId: activeModel?.id ?? '',
                     userKeys: Object.keys(userKeys).length ? userKeys : undefined,
                     maxRounds: 3,
                 }),
@@ -402,7 +423,7 @@ export default function MainInput() {
             const params = new URLSearchParams({
                 q: input, type: selectedType, mode: operationalMode,
                 ...(data.jobId ? { jobId: data.jobId } : {}),
-                ...(selectedModel ? { model: selectedModel.id } : {}),
+                ...(activeModel ? { model: activeModel.id } : {}),
                 visibility: isPublic ? 'public' : 'private',
             });
             router.push(`/workspace?${params}`);
@@ -500,8 +521,8 @@ export default function MainInput() {
                             <button
                                 ref={modeBtnRef}
                                 type="button"
-                                onClick={() => { setShowModes(v => !v); setShowModels(false); setShowSettings(false); }}
-                                className={`flex items-center pl-2 pr-2 py-1.5 rounded-lg text-xs font-medium transition-colors border border-transparent min-w-[130px] justify-between box-border
+                                onClick={() => { setShowModes(v => !v); setShowSettings(false); }}
+                                className={`flex items-center pl-2 pr-2 py-1.5 rounded-lg text-xs font-medium transition-colors border border-transparent w-[140px] flex-shrink-0 justify-between box-border
                                     ${showModes
                                         ? 'bg-muted !border-border text-foreground'
                                         : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -514,23 +535,13 @@ export default function MainInput() {
                                 <ChevronDown className={`w-3 h-3 opacity-60 flex-shrink-0 transition-transform ${showModes ? 'rotate-180' : ''}`} />
                             </button>
 
-                            {/* Model selector button */}
-                            <button
-                                ref={modelBtnRef}
-                                type="button"
-                                onClick={() => { setShowModels(v => !v); setShowSettings(false); setShowModes(false); }}
-                                className={`flex items-center pl-2 pr-2 py-1.5 rounded-lg text-xs font-medium transition-colors border border-transparent min-w-[140px] justify-between box-border
-                                    ${showModels
-                                        ? 'bg-muted !border-border text-foreground'
-                                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                                    }`}
-                            >
+                            {/* Model display */}
+                            <div className="flex items-center pl-2 pr-2 py-1.5 rounded-lg text-xs font-medium text-muted-foreground border border-transparent w-[160px] flex-shrink-0 justify-start box-border select-none">
                                 <div className="flex items-center gap-1.5 overflow-hidden">
-                                    <ModelIcon model={selectedModel} className="w-4 h-4" />
-                                    <span className="truncate">{selectedModel?.name ?? 'Select model'}</span>
+                                    <ModelIcon model={activeModel} className="w-4 h-4" />
+                                    <span className="truncate">{activeModel?.name ?? 'No model selected'}</span>
                                 </div>
-                                <ChevronDown className={`w-3 h-3 opacity-60 flex-shrink-0 transition-transform ${showModels ? 'rotate-180' : ''}`} />
-                            </button>
+                            </div>
                         </div>
 
                         {/* Right side */}
@@ -551,7 +562,7 @@ export default function MainInput() {
                             <button
                                 ref={settingsBtnRef}
                                 type="button"
-                                onClick={() => { setShowSettings(v => !v); setShowModels(false); setShowModes(false); }}
+                                onClick={() => { setShowSettings(v => !v); setShowModes(false); }}
                                 title="Settings"
                                 className={`p-2 rounded-lg transition-colors ${showSettings
                                     ? 'text-primary bg-primary/10'
@@ -582,39 +593,6 @@ export default function MainInput() {
                 </form>
             </motion.div>
 
-            {/* ── Model Dropdown Popover ─────────────────────────────── */}
-            {/* Absolutely positioned relative to wrapperRef, floating above page layout */}
-            <AnimatePresence>
-                {showModels && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -6, scale: 0.97 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -6, scale: 0.97 }}
-                        transition={{ duration: 0.12 }}
-                        className="absolute left-0 top-[calc(100%+6px)] w-full bg-card border border-border rounded-2xl shadow-2xl shadow-black/25 z-50 overflow-hidden"
-                    >
-                        <div className="p-1.5 grid grid-cols-2 gap-1 max-h-[280px] overflow-y-auto">
-                            {models.map(m => (
-                                <button
-                                    key={m.id}
-                                    type="button"
-                                    onClick={() => { setSelectedModel(m); setShowModels(false); }}
-                                    className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs transition-colors text-left
-                                        ${selectedModel?.id === m.id
-                                            ? 'bg-primary/10 text-foreground'
-                                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
-                                >
-                                    <ModelIcon model={m} className="w-5 h-5" />
-                                    <span className="flex-1 min-w-0">
-                                        <span className="block font-medium truncate">{m.name}</span>
-                                    </span>
-                                    {selectedModel?.id === m.id && <Check className="w-3 h-3 text-primary flex-shrink-0" />}
-                                </button>
-                            ))}
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
 
             {/* ── Operational Mode Popover ─────────────────────────────── */}
             <AnimatePresence>

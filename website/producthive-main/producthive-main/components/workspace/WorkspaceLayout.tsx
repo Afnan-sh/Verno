@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Hexagon } from 'lucide-react';
+import { Hexagon, Eye, Code2, Terminal, Share2, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import WorkspaceChat from './WorkspaceChat';
 import PRDViewer from './PRDViewer';
@@ -39,14 +39,13 @@ export default function WorkspaceLayout({
     model,
     visibility,
 }: WorkspaceLayoutProps) {
-    // The PRD content — populated when generation completes or the user wants to preview
     const [prdContent, setPrdContent] = useState<string>('');
     const [prdTitle, setPrdTitle] = useState<string>('');
     const [isGenerating, setIsGenerating] = useState(true);
+    const [activeTab, setActiveTab] = useState<'preview' | 'code' | 'console'>('preview');
 
     const agents = DEBATE_AGENTS;
 
-    // Called by the chat panel when a PRD is produced
     const handlePRDReady = useCallback((title: string, content: string) => {
         setPrdTitle(title);
         setPrdContent(content);
@@ -54,29 +53,57 @@ export default function WorkspaceLayout({
     }, []);
 
     return (
-        <div className="h-screen flex flex-col bg-background overflow-hidden">
+        <div className="h-screen flex flex-col bg-[#0E0E10] overflow-hidden">
             {/* ── Top Bar ──────────────────────────────────────────────── */}
-            <header className="h-12 flex items-center justify-between px-4 border-b border-border bg-card/80 backdrop-blur-md flex-shrink-0 z-50">
-                <div className="flex items-center gap-3">
+            <header className="h-11 flex items-center justify-between px-3 border-b border-white/[0.06] bg-[#18181B] flex-shrink-0 z-50">
+                {/* Left: Logo + Project */}
+                <div className="flex items-center gap-2.5">
                     <Link
                         href="/"
-                        className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+                        className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
                     >
-                        <ArrowLeft className="w-4 h-4" />
-                        <Hexagon className="w-4 h-4 text-[#DD830A] fill-[#DD830A]/20" strokeWidth={2.5} />
-                        <span className="text-xs font-semibold tracking-tight">ProductHive</span>
+                        <div className="w-6 h-6 rounded-md bg-gradient-to-br from-[#DD830A] to-[#F59E0B] flex items-center justify-center">
+                            <Hexagon className="w-3.5 h-3.5 text-white fill-white/20" strokeWidth={2.5} />
+                        </div>
                     </Link>
-                    <div className="w-px h-5 bg-border mx-1" />
-                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                        <span className="px-2 py-0.5 rounded bg-muted border border-border font-medium">{projectType}</span>
-                        <span className="px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20 font-medium">{mode}</span>
-                        {visibility === 'private' && (
-                            <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-medium">Private</span>
-                        )}
-                    </div>
+                    <div className="w-px h-4 bg-white/10" />
+                    <span className="text-[13px] text-white/50 font-medium truncate max-w-[200px]">
+                        {query.slice(0, 40)}{query.length > 40 ? '…' : ''}
+                    </span>
                 </div>
-                <div className="text-[11px] text-muted-foreground/60">
-                    {model && <span>Model: {model}</span>}
+
+                {/* Center: View Tabs */}
+                <div className="flex items-center gap-0.5 bg-white/[0.04] rounded-lg p-0.5 border border-white/[0.06]">
+                    {([
+                        { id: 'preview' as const, icon: Eye, label: 'Preview' },
+                        { id: 'code' as const, icon: Code2, label: 'PRD' },
+                        { id: 'console' as const, icon: Terminal, label: 'Agents' },
+                    ]).map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                                activeTab === tab.id
+                                    ? 'bg-white/10 text-white shadow-sm'
+                                    : 'text-white/40 hover:text-white/60'
+                            }`}
+                        >
+                            <tab.icon className="w-3.5 h-3.5" />
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Right: Actions */}
+                <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 text-[11px] text-white/30">
+                        <span className="px-1.5 py-0.5 rounded bg-white/[0.06] border border-white/[0.06]">{projectType}</span>
+                        <span className="px-1.5 py-0.5 rounded bg-[#DD830A]/10 text-[#DD830A] border border-[#DD830A]/20">{mode}</span>
+                    </div>
+                    <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white/50 hover:text-white/70 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] transition-all">
+                        <Share2 className="w-3 h-3" />
+                        Share
+                    </button>
                 </div>
             </header>
 
@@ -87,7 +114,7 @@ export default function WorkspaceLayout({
                     initial={{ x: -20, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     transition={{ duration: 0.3 }}
-                    className="w-[45%] min-w-[380px] border-r border-border flex flex-col"
+                    className="w-[45%] min-w-[380px] border-r border-white/[0.06] flex flex-col bg-[#0E0E10]"
                 >
                     <WorkspaceChat
                         query={query}
@@ -105,7 +132,7 @@ export default function WorkspaceLayout({
                     initial={{ x: 20, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     transition={{ duration: 0.3, delay: 0.1 }}
-                    className="flex-1 flex flex-col"
+                    className="flex-1 flex flex-col bg-[#15151A]"
                 >
                     <PRDViewer
                         title={prdTitle}
